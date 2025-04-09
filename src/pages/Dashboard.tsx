@@ -5,11 +5,13 @@ import { MainLayout } from "@/layouts/MainLayout";
 import { StudyStats } from "@/components/StudyStats";
 import { FlashcardSetList } from "@/components/FlashcardSetList";
 import { FlashcardSet, StudyStats as StudyStatsType } from "@/types";
-import { getFlashcardSets, getStudyStats } from "@/services/apiService";
-import { Loader2, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
+import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
+
+// Import from the client service instead of the direct Prisma service
+import * as apiService from "@/services/clientApiService";
 
 export default function Dashboard() {
   const [flashcardSets, setFlashcardSets] = useState<FlashcardSet[]>([]);
@@ -24,8 +26,8 @@ export default function Dashboard() {
       try {
         setIsLoading(true);
         const [setsData, statsData] = await Promise.all([
-          getFlashcardSets(user.id),
-          getStudyStats(user.id),
+          apiService.getFlashcardSets(user.id),
+          apiService.getStudyStats(user.id),
         ]);
         
         setFlashcardSets(setsData);
