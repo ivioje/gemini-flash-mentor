@@ -12,6 +12,7 @@ import { Loader2, Plus, Trash, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { createFlashcardSet } from "@/services/apiService";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "@clerk/clerk-react";
 
 const CATEGORIES = [
   "Science",
@@ -27,6 +28,7 @@ const CATEGORIES = [
 
 export function CreateFlashcardSetForm() {
   const navigate = useNavigate();
+  const { user } = useUser();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -97,6 +99,11 @@ export function CreateFlashcardSetForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user) {
+      toast.error("You must be signed in to create flashcards");
+      return;
+    }
+    
     // Validation
     if (!title) {
       toast.error("Title is required");
@@ -123,7 +130,7 @@ export function CreateFlashcardSetForm() {
         answer
       }));
       
-      await createFlashcardSet(title, description, category, cardsData);
+      await createFlashcardSet(user.id, title, description, category, cardsData);
       navigate("/dashboard");
     } catch (error) {
       console.error(error);
