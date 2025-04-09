@@ -9,10 +9,12 @@ import { getFlashcardSet, getFlashcards, updateFlashcardReview } from "@/service
 import { ArrowLeft, CheckCircle2, LoaderCircle, TimerIcon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { useUser } from "@clerk/clerk-react";
 
 export default function StudySession() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useUser();
   const [set, setSet] = useState<FlashcardSet | null>(null);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -22,7 +24,7 @@ export default function StudySession() {
 
   useEffect(() => {
     async function loadData() {
-      if (!id) return;
+      if (!id || !user) return;
       
       try {
         setIsLoading(true);
@@ -32,22 +34,34 @@ export default function StudySession() {
         ]);
         
         if (!setData) {
+          toast.error("Flashcard set not found");
           navigate("/dashboard");
           return;
         }
         
         setSet(setData);
-        setFlashcards(cardsData);
+        
+        // Sort cards by due date (null ones at the end)
+        const sortedCards = cardsData.sort((a, b) => {
+          if (!a.nextReview) return 1;
+          if (!b.nextReview) return -1;
+          return new Date(a.nextReview).getTime() - new Date(b.nextReview).getTime();
+        });
+        
+        setFlashcards(sortedCards);
         setSessionStartTime(new Date());
       } catch (error) {
         console.error("Error loading study session:", error);
+        toast.error("Failed to load study session");
       } finally {
         setIsLoading(false);
       }
     }
     
-    loadData();
-  }, [id, navigate]);
+    if (user) {
+      loadData();
+    }
+  }, [id, navigate, user]);
 
   const handleRating = async (quality: number) => {
     try {

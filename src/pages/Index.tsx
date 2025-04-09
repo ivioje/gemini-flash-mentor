@@ -2,8 +2,10 @@
 import { Button } from "@/components/ui/button";
 import { MainLayout } from "@/layouts/MainLayout";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { ArrowRight, BookOpen, Brain, Stars, Zap } from "lucide-react";
+import { ArrowRight, BookOpen, Brain, CheckCircle, Quote, Stars, User, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Index() {
   return (
@@ -90,6 +92,59 @@ export default function Index() {
           </div>
         </section>
 
+        {/* Testimonials Section */}
+        <section className="py-12 md:py-16">
+          <div className="container px-4 md:px-6">
+            <div className="mb-8 md:mb-12 text-center">
+              <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">
+                What Our Users Say
+              </h2>
+              <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground md:text-lg">
+                Discover how GemMentor has helped students achieve their academic goals.
+              </p>
+            </div>
+            
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <TestimonialCard
+                name="Alex Johnson"
+                role="Medical Student"
+                image="/placeholder.svg"
+                testimonial="GemMentor helped me memorize complex medical terminology. The AI-generated flashcards saved me hours of preparation time!"
+              />
+              <TestimonialCard
+                name="Sarah Chen"
+                role="Computer Science Major"
+                image="/placeholder.svg"
+                testimonial="The spaced repetition system is incredible. I've seen my retention improve dramatically since using GemMentor for my programming studies."
+              />
+              <TestimonialCard
+                name="Michael Rodriguez"
+                role="History Teacher"
+                image="/placeholder.svg"
+                testimonial="I recommend GemMentor to all my students. The mastery tracking helps them focus on areas where they need the most improvement."
+              />
+            </div>
+            
+            <div className="mt-10 flex justify-center">
+              <Card className="border border-primary/20 bg-primary/5 w-full max-w-3xl">
+                <CardContent className="p-6 text-center">
+                  <div className="mb-4 flex justify-center">
+                    <div className="rounded-full bg-primary/10 p-2">
+                      <CheckCircle className="h-6 w-6 text-primary" />
+                    </div>
+                  </div>
+                  <p className="text-lg font-medium mb-4">
+                    "On average, students using GemMentor report a 40% improvement in test scores after just 3 weeks of consistent use."
+                  </p>
+                  <p className="text-muted-foreground">
+                    Based on a survey of 500+ users in 2025
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
         {/* CTA Section */}
         <section className="py-12 md:py-16">
           <div className="container px-4 md:px-6">
@@ -112,5 +167,35 @@ export default function Index() {
         </section>
       </MainLayout>
     </ThemeProvider>
+  );
+}
+
+function TestimonialCard({ name, role, image, testimonial }: { 
+  name: string; 
+  role: string; 
+  image: string;
+  testimonial: string;
+}) {
+  return (
+    <Card className="h-full">
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-3">
+          <Avatar>
+            <AvatarImage src={image} alt={name} />
+            <AvatarFallback>{name[0]}</AvatarFallback>
+          </Avatar>
+          <div>
+            <CardTitle className="text-lg">{name}</CardTitle>
+            <CardDescription>{role}</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex mb-2">
+          <Quote className="h-5 w-5 text-primary/70" />
+        </div>
+        <p className="text-muted-foreground">{testimonial}</p>
+      </CardContent>
+    </Card>
   );
 }

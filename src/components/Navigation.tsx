@@ -13,13 +13,12 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/clerk-react";
 
 export function Navigation() {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  
-  // Temporary auth state until Supabase is connected
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const { isSignedIn, isLoaded } = useUser();
   
   const closeMenu = () => {
     setIsMenuOpen(false);
@@ -29,11 +28,10 @@ export function Navigation() {
     { path: "/", label: "Home", icon: Home },
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, authRequired: true },
     { path: "/create", label: "Create", icon: Plus, authRequired: true },
-    { path: "/study", label: "Study", icon: BookOpen, authRequired: true },
   ];
   
   const filteredNavItems = navItems.filter(item => 
-    !item.authRequired || isAuthenticated
+    !item.authRequired || isSignedIn
   );
   
   return (
@@ -69,19 +67,21 @@ export function Navigation() {
         <div className="flex items-center space-x-2">
           <ThemeToggle />
           
-          {isAuthenticated ? (
-            <Button variant="ghost" size="icon" className="rounded-full" asChild>
-              <Link to="/profile">
-                <User className="h-5 w-5" />
-              </Link>
-            </Button>
-          ) : (
-            <Button asChild>
-              <Link to="/login">
-                <LogIn className="h-4 w-4 mr-2" />
-                Login
-              </Link>
-            </Button>
+          {isLoaded && (
+            <>
+              {isSignedIn ? (
+                <UserButton afterSignOutUrl="/" />
+              ) : (
+                <div className="flex space-x-2">
+                  <SignInButton mode="modal">
+                    <Button variant="ghost" size="sm">Sign in</Button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <Button>Sign up</Button>
+                  </SignUpButton>
+                </div>
+              )}
+            </>
           )}
           
           {/* Mobile navigation button */}
