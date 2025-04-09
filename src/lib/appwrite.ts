@@ -3,7 +3,7 @@ import { Account, Client, Databases, ID, Query, Storage } from 'appwrite';
 
 // Appwrite configuration
 const endpoint = 'https://cloud.appwrite.io/v1';
-const projectId = 'gemmentor'; // Replace with your Appwrite project ID
+const projectId = '67f6569f00368918227f'; // Using the provided project ID
 
 // Initialize the Appwrite client
 const client = new Client();

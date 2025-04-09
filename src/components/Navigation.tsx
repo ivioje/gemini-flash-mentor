@@ -6,7 +6,6 @@ import {
   BookOpen,
   Home,
   LayoutDashboard,
-  LogIn,
   LogOut,
   Menu,
   Plus,
@@ -65,12 +64,12 @@ export function Navigation() {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center">
           <Link to="/" className="flex items-center space-x-2">
-            <BookOpen className="h-6 w-6" />
+            <BookOpen className="h-6 w-6 text-primary" />
             <span className="font-bold text-xl">GemMentor</span>
           </Link>
           
           {/* Desktop navigation */}
-          <nav className="hidden md:flex ml-6 space-x-4">
+          <nav className="hidden md:flex ml-6 space-x-2">
             {filteredNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -79,9 +78,10 @@ export function Navigation() {
                 <Link key={item.path} to={item.path}>
                   <Button
                     variant={isActive ? "secondary" : "ghost"}
-                    className="flex items-center"
+                    className="flex items-center gap-2"
+                    size="sm"
                   >
-                    <Icon className="h-4 w-4 mr-2" />
+                    <Icon className="h-4 w-4" />
                     {item.label}
                   </Button>
                 </Link>
@@ -90,7 +90,7 @@ export function Navigation() {
           </nav>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           <ThemeToggle />
           
           {!isLoading && (
@@ -99,21 +99,23 @@ export function Navigation() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="rounded-full">
-                      <Avatar>
-                        <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                      <Avatar className="h-8 w-8 border-2 border-primary/20">
+                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                          {getUserInitials()}
+                        </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuItem asChild>
-                      <Link to="/profile" className="cursor-pointer w-full">
+                      <Link to="/profile" className="cursor-pointer w-full flex items-center">
                         <User className="mr-2 h-4 w-4" />
                         Profile
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer flex items-center">
                       <LogOut className="mr-2 h-4 w-4" />
                       Log out
                     </DropdownMenuItem>
@@ -121,10 +123,10 @@ export function Navigation() {
                 </DropdownMenu>
               ) : (
                 <div className="flex space-x-2">
-                  <Button variant="ghost" size="sm" asChild>
+                  <Button variant="outline" size="sm" asChild>
                     <Link to="/sign-in">Sign in</Link>
                   </Button>
-                  <Button asChild>
+                  <Button size="sm" className="bg-primary text-white hover:bg-primary/90" asChild>
                     <Link to="/sign-up">Sign up</Link>
                   </Button>
                 </div>
@@ -141,7 +143,11 @@ export function Navigation() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right">
-                <nav className="flex flex-col gap-4 mt-8">
+                <div className="flex items-center mb-8 mt-2">
+                  <BookOpen className="h-6 w-6 mr-2 text-primary" />
+                  <span className="font-bold text-xl">GemMentor</span>
+                </div>
+                <nav className="flex flex-col gap-2">
                   {filteredNavItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = location.pathname === item.path;

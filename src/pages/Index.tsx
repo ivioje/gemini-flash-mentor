@@ -3,41 +3,25 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Testimonials } from "@/components/Testimonials";
 import { useAuth } from "@/contexts/AuthContext";
+import { Navigation } from "@/components/Navigation";
 
 export default function Index() {
   const { isAuthenticated } = useAuth();
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="bg-background border-b p-4">
-        <div className="container flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-bold text-foreground">GemMentor</h1>
-          </div>
-          <nav className="flex items-center gap-4">
-            {isAuthenticated ? (
-              <Button asChild>
-                <Link to="/dashboard">Dashboard</Link>
-              </Button>
-            ) : (
-              <>
-                <Button variant="outline" asChild>
-                  <Link to="/sign-in">Sign In</Link>
-                </Button>
-                <Button asChild>
-                  <Link to="/sign-up">Sign Up</Link>
-                </Button>
-              </>
-            )}
-          </nav>
-        </div>
-      </header>
+      <Navigation />
       <main className="flex-1">
-        <section className="py-24 md:py-32">
+        <section className="py-24 md:py-32 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-background -z-10"></div>
+          <div className="absolute top-0 right-0 -z-10 w-full h-full bg-[radial-gradient(circle_500px_at_70%_20%,rgba(173,216,230,0.15),transparent)]"></div>
           <div className="container px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
               <div className="space-y-4">
-                <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+                <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary">
+                  AI-powered learning
+                </div>
+                <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
                   Learn Faster with AI-Powered Flashcards
                 </h1>
                 <p className="max-w-[600px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
@@ -46,7 +30,7 @@ export default function Index() {
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   {!isAuthenticated ? (
                     <>
-                      <Button size="lg" asChild>
+                      <Button size="lg" className="bg-primary text-white hover:bg-primary/90" asChild>
                         <Link to="/sign-up">Get Started</Link>
                       </Button>
                       <Button size="lg" variant="outline" asChild>
@@ -54,20 +38,24 @@ export default function Index() {
                       </Button>
                     </>
                   ) : (
-                    <Button size="lg" asChild>
+                    <Button size="lg" className="bg-primary text-white hover:bg-primary/90" asChild>
                       <Link to="/dashboard">Go to Dashboard</Link>
                     </Button>
                   )}
                 </div>
               </div>
               <div className="flex items-center justify-center">
-                <img
-                  src="/placeholder.svg"
-                  width={550}
-                  height={400}
-                  alt="Hero image"
-                  className="rounded-lg object-cover border shadow-lg"
-                />
+                <div className="relative rounded-xl overflow-hidden shadow-xl border border-border/40 w-full h-[380px]">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20"></div>
+                  <img
+                    src="/placeholder.svg"
+                    width={550}
+                    height={400}
+                    alt="Hero image"
+                    className="object-cover w-full h-full mix-blend-overlay"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -158,7 +146,9 @@ export default function Index() {
         
         <Testimonials />
         
-        <section className="py-24 bg-primary text-primary-foreground">
+        <section className="py-24 bg-primary text-primary-foreground relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/80 -z-10"></div>
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.1),transparent)] -z-10"></div>
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">

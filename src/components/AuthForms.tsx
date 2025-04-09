@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function SignInForm() {
   const [email, setEmail] = useState("");
@@ -29,10 +30,12 @@ export function SignInForm() {
   };
 
   return (
-    <Card className="mx-auto max-w-sm">
-      <CardHeader>
-        <CardTitle>Sign In</CardTitle>
-        <CardDescription>Enter your email and password to sign in to your account</CardDescription>
+    <Card className="mx-auto max-w-sm w-full">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl font-bold text-center">Sign In</CardTitle>
+        <CardDescription className="text-center">
+          Enter your credentials to access your account
+        </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
@@ -45,24 +48,37 @@ export function SignInForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="w-full"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                Forgot password?
+              </Link>
+            </div>
             <Input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              className="w-full"
             />
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col space-y-4">
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign In
           </Button>
+          <div className="text-center text-sm">
+            Don't have an account?{" "}
+            <Link to="/sign-up" className="text-primary hover:underline">
+              Sign up
+            </Link>
+          </div>
         </CardFooter>
       </form>
     </Card>
@@ -91,21 +107,24 @@ export function SignUpForm() {
   };
 
   return (
-    <Card className="mx-auto max-w-sm">
-      <CardHeader>
-        <CardTitle>Sign Up</CardTitle>
-        <CardDescription>Create an account to get started</CardDescription>
+    <Card className="mx-auto max-w-sm w-full">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl font-bold text-center">Create an Account</CardTitle>
+        <CardDescription className="text-center">
+          Enter your information to create an account
+        </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">Full Name</Label>
             <Input
               id="name"
               placeholder="John Doe"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              className="w-full"
             />
           </div>
           <div className="space-y-2">
@@ -117,6 +136,7 @@ export function SignUpForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="w-full"
             />
           </div>
           <div className="space-y-2">
@@ -127,14 +147,21 @@ export function SignUpForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              className="w-full"
             />
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col space-y-4">
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create Account
           </Button>
+          <div className="text-center text-sm">
+            Already have an account?{" "}
+            <Link to="/sign-in" className="text-primary hover:underline">
+              Sign in
+            </Link>
+          </div>
         </CardFooter>
       </form>
     </Card>
