@@ -1,10 +1,12 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { SignInButton, SignUpButton, SignedIn, SignedOut } from "@clerk/clerk-react";
 import { Testimonials } from "@/components/Testimonials";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Index() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="bg-background border-b p-4">
@@ -13,19 +15,20 @@ export default function Index() {
             <h1 className="text-2xl font-bold text-foreground">GemMentor</h1>
           </div>
           <nav className="flex items-center gap-4">
-            <SignedIn>
+            {isAuthenticated ? (
               <Button asChild>
                 <Link to="/dashboard">Dashboard</Link>
               </Button>
-            </SignedIn>
-            <SignedOut>
-              <SignInButton mode="modal">
-                <Button variant="outline">Sign In</Button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <Button>Sign Up</Button>
-              </SignUpButton>
-            </SignedOut>
+            ) : (
+              <>
+                <Button variant="outline" asChild>
+                  <Link to="/sign-in">Sign In</Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/sign-up">Sign Up</Link>
+                </Button>
+              </>
+            )}
           </nav>
         </div>
       </header>
@@ -41,19 +44,20 @@ export default function Index() {
                   GemMentor uses AI to help you create effective flashcards and optimize your study sessions with spaced repetition for maximum retention.
                 </p>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <SignedOut>
-                    <SignUpButton mode="modal">
-                      <Button size="lg">Get Started</Button>
-                    </SignUpButton>
-                    <SignInButton mode="modal">
-                      <Button size="lg" variant="outline">Sign In</Button>
-                    </SignInButton>
-                  </SignedOut>
-                  <SignedIn>
+                  {!isAuthenticated ? (
+                    <>
+                      <Button size="lg" asChild>
+                        <Link to="/sign-up">Get Started</Link>
+                      </Button>
+                      <Button size="lg" variant="outline" asChild>
+                        <Link to="/sign-in">Sign In</Link>
+                      </Button>
+                    </>
+                  ) : (
                     <Button size="lg" asChild>
                       <Link to="/dashboard">Go to Dashboard</Link>
                     </Button>
-                  </SignedIn>
+                  )}
                 </div>
               </div>
               <div className="flex items-center justify-center">
@@ -166,18 +170,15 @@ export default function Index() {
                 </p>
               </div>
               <div className="w-full max-w-sm space-y-2">
-                <SignedOut>
-                  <SignUpButton mode="modal">
-                    <Button size="lg" className="w-full bg-background text-primary hover:bg-background/90">
-                      Sign Up For Free
-                    </Button>
-                  </SignUpButton>
-                </SignedOut>
-                <SignedIn>
+                {!isAuthenticated ? (
+                  <Button size="lg" className="w-full bg-background text-primary hover:bg-background/90" asChild>
+                    <Link to="/sign-up">Sign Up For Free</Link>
+                  </Button>
+                ) : (
                   <Button size="lg" className="w-full bg-background text-primary hover:bg-background/90" asChild>
                     <Link to="/dashboard">Go to Dashboard</Link>
                   </Button>
-                </SignedIn>
+                )}
               </div>
             </div>
           </div>

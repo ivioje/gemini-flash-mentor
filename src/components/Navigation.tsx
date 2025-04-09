@@ -7,18 +7,28 @@ import {
   Home,
   LayoutDashboard,
   LogIn,
+  LogOut,
   Menu,
   Plus,
   User,
 } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function Navigation() {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { isSignedIn, isLoaded } = useUser();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   
   const closeMenu = () => {
     setIsMenuOpen(false);
@@ -31,8 +41,24 @@ export function Navigation() {
   ];
   
   const filteredNavItems = navItems.filter(item => 
-    !item.authRequired || isSignedIn
+    !item.authRequired || isAuthenticated
   );
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
+
+  const getUserInitials = () => {
+    if (!user?.name) return "U";
+    return user.name.split(" ")
+      .map(name => name[0])
+      .join("")
+      .toUpperCase();
+  };
   
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
@@ -67,18 +93,40 @@ export function Navigation() {
         <div className="flex items-center space-x-2">
           <ThemeToggle />
           
-          {isLoaded && (
+          {!isLoading && (
             <>
-              {isSignedIn ? (
-                <UserButton afterSignOutUrl="/" />
+              {isAuthenticated ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full">
+                      <Avatar>
+                        <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="cursor-pointer w-full">
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <div className="flex space-x-2">
-                  <SignInButton mode="modal">
-                    <Button variant="ghost" size="sm">Sign in</Button>
-                  </SignInButton>
-                  <SignUpButton mode="modal">
-                    <Button>Sign up</Button>
-                  </SignUpButton>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link to="/sign-in">Sign in</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link to="/sign-up">Sign up</Link>
+                  </Button>
                 </div>
               )}
             </>
@@ -110,6 +158,20 @@ export function Navigation() {
                       </Link>
                     );
                   })}
+                  
+                  {isAuthenticated && (
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start mt-4"
+                      onClick={() => {
+                        handleLogout();
+                        closeMenu();
+                      }}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Log out
+                    </Button>
+                  )}
                 </nav>
               </SheetContent>
             </Sheet>

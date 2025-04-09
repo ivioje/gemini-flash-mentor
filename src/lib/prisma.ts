@@ -1,37 +1,25 @@
 
-import { PrismaClient } from '@prisma/client';
+// This file is kept for backward compatibility
+// and will use Appwrite instead of Prisma
 
-// This is a workaround for Prisma Client in browser environments
-// Since we can't directly access the database from the browser,
-// we'll create a mock client or use API endpoints instead
+import { databases, COLLECTIONS, DATABASES } from './appwrite';
 
-class PrismaMock {
-  constructor() {
-    console.log('Creating Prisma mock for browser environment');
-  }
-
-  // Add mock methods here that will be used in the browser
+// Export a compatibility layer to minimize changes elsewhere
+export const prisma = {
+  // Mock functions that will be handled by Appwrite in apiService.ts
   async $connect() {
-    console.log('Mock: Connected to database');
+    console.log('Appwrite connection initialized');
     return Promise.resolve();
-  }
-
+  },
+  
   async $disconnect() {
-    console.log('Mock: Disconnected from database');
+    console.log('Appwrite connection closed');
     return Promise.resolve();
   }
-}
+};
 
-// Create a prisma instance based on the environment
-const isBrowser = typeof window !== 'undefined';
-
-// Export the appropriate client based on environment
-export const prisma = isBrowser 
-  ? new PrismaMock() as unknown as PrismaClient 
-  : new PrismaClient();
-
-// For development purposes
-if (process.env.NODE_ENV !== 'production' && !isBrowser) {
+// For compatibility with existing code
+if (process.env.NODE_ENV !== 'production') {
   // @ts-ignore - Global declaration
   if (!global.prisma) {
     // @ts-ignore - Global assignment

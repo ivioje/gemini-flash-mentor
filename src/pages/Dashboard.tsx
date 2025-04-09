@@ -6,7 +6,7 @@ import { StudyStats } from "@/components/StudyStats";
 import { FlashcardSetList } from "@/components/FlashcardSetList";
 import { FlashcardSet, StudyStats as StudyStatsType } from "@/types";
 import { Link } from "react-router-dom";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,7 +17,7 @@ export default function Dashboard() {
   const [flashcardSets, setFlashcardSets] = useState<FlashcardSet[]>([]);
   const [stats, setStats] = useState<StudyStatsType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useUser();
+  const { user } = useAuth();
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -26,8 +26,8 @@ export default function Dashboard() {
       try {
         setIsLoading(true);
         const [setsData, statsData] = await Promise.all([
-          apiService.getFlashcardSets(user.id),
-          apiService.getStudyStats(user.id),
+          apiService.getFlashcardSets(user.$id),
+          apiService.getStudyStats(user.$id),
         ]);
         
         setFlashcardSets(setsData);

@@ -1,8 +1,14 @@
 
 import { toast } from "sonner";
-import { prisma } from "@/lib/prisma";
+import { 
+  databases, 
+  DATABASES, 
+  COLLECTIONS, 
+  generateId, 
+  getCurrentUser 
+} from "@/lib/appwrite";
 import { Flashcard, FlashcardSet, StudyStats } from "@/types";
-import { useUser } from "@clerk/clerk-react";
+import { ID, Query } from "appwrite";
 
 // Helper to update spaced repetition data
 function calculateNextReview(quality: number, previousInterval: number, previousEase: number, repetitions: number): {
@@ -53,25 +59,33 @@ function calculateNextReview(quality: number, previousInterval: number, previous
 
 export async function getFlashcardSets(userId: string): Promise<FlashcardSet[]> {
   try {
-    const sets = await prisma.flashcardSet.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-    });
+    const response = await databases.listDocuments(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARD_SETS,
+      [Query.equal("userId", userId)]
+    );
+    
+    const sets = response.documents;
     
     const formattedSets = await Promise.all(sets.map(async (set) => {
-      const cardCount = await prisma.flashcard.count({
-        where: { setId: set.id }
-      });
+      // Count cards for this set
+      const cardCountResponse = await databases.listDocuments(
+        DATABASES.DEFAULT,
+        COLLECTIONS.FLASHCARDS,
+        [Query.equal("setId", set.$id)]
+      );
+      
+      const cardCount = cardCountResponse.total;
       
       return {
-        id: set.id,
+        id: set.$id,
         title: set.title,
         description: set.description,
-        createdAt: set.createdAt.toISOString(),
-        lastStudied: set.lastStudied?.toISOString() || null,
+        createdAt: set.createdAt,
+        lastStudied: set.lastStudied || null,
         cardCount,
         category: set.category,
-        mastery: set.mastery,
+        mastery: set.mastery || 0,
       };
     }));
     
@@ -84,25 +98,32 @@ export async function getFlashcardSets(userId: string): Promise<FlashcardSet[]> 
 
 export async function getFlashcardSet(id: string): Promise<FlashcardSet | null> {
   try {
-    const set = await prisma.flashcardSet.findUnique({
-      where: { id }
-    });
+    const set = await databases.getDocument(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARD_SETS,
+      id
+    );
     
     if (!set) return null;
     
-    const cardCount = await prisma.flashcard.count({
-      where: { setId: id }
-    });
+    // Count cards for this set
+    const cardCountResponse = await databases.listDocuments(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARDS,
+      [Query.equal("setId", id)]
+    );
+    
+    const cardCount = cardCountResponse.total;
     
     return {
-      id: set.id,
+      id: set.$id,
       title: set.title,
       description: set.description,
-      createdAt: set.createdAt.toISOString(),
-      lastStudied: set.lastStudied?.toISOString() || null,
+      createdAt: set.createdAt,
+      lastStudied: set.lastStudied || null,
       cardCount,
       category: set.category,
-      mastery: set.mastery,
+      mastery: set.mastery || 0,
     };
   } catch (error) {
     console.error("Error getting flashcard set:", error);
@@ -112,20 +133,24 @@ export async function getFlashcardSet(id: string): Promise<FlashcardSet | null> 
 
 export async function getFlashcards(setId: string): Promise<Flashcard[]> {
   try {
-    const cards = await prisma.flashcard.findMany({
-      where: { setId }
-    });
+    const response = await databases.listDocuments(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARDS,
+      [Query.equal("setId", setId)]
+    );
+    
+    const cards = response.documents;
     
     return cards.map(card => ({
-      id: card.id,
+      id: card.$id,
       setId: card.setId,
       question: card.question,
       answer: card.answer,
-      lastReviewed: card.lastReviewed?.toISOString() || null,
-      nextReview: card.nextReview?.toISOString() || null,
-      ease: card.ease,
-      interval: card.interval,
-      repetitions: card.repetitions,
+      lastReviewed: card.lastReviewed || null,
+      nextReview: card.nextReview || null,
+      ease: card.ease || 2.5,
+      interval: card.interval || 1,
+      repetitions: card.repetitions || 0,
     }));
   } catch (error) {
     console.error("Error getting flashcards:", error);
@@ -142,47 +167,83 @@ export async function createFlashcardSet(
 ): Promise<FlashcardSet> {
   try {
     // Create the new flashcard set
-    const newSet = await prisma.flashcardSet.create({
-      data: {
+    const newSetId = generateId();
+    const newSet = await databases.createDocument(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARD_SETS,
+      newSetId,
+      {
         title,
         description,
         category,
         userId,
+        createdAt: new Date().toISOString(),
+        mastery: 0
       }
-    });
+    );
     
     // Create all flashcards in the set
     if (flashcards.length > 0) {
-      await prisma.flashcard.createMany({
-        data: flashcards.map(card => ({
-          question: card.question,
-          answer: card.answer,
-          setId: newSet.id,
-        }))
-      });
-      
-      // Update the user's total cards count
-      await prisma.studyStats.upsert({
-        where: { userId },
-        update: {
-          totalCards: {
-            increment: flashcards.length
+      const createFlashcardsPromises = flashcards.map(card => 
+        databases.createDocument(
+          DATABASES.DEFAULT,
+          COLLECTIONS.FLASHCARDS,
+          generateId(),
+          {
+            question: card.question,
+            answer: card.answer,
+            setId: newSetId,
+            ease: 2.5,
+            interval: 1,
+            repetitions: 0
           }
-        },
-        create: {
-          userId,
-          totalCards: flashcards.length
-        }
-      });
+        )
+      );
+      
+      await Promise.all(createFlashcardsPromises);
+      
+      // Update or create user's study stats
+      const statsResponse = await databases.listDocuments(
+        DATABASES.DEFAULT,
+        COLLECTIONS.STUDY_STATS,
+        [Query.equal("userId", userId)]
+      );
+      
+      if (statsResponse.total > 0) {
+        const stats = statsResponse.documents[0];
+        await databases.updateDocument(
+          DATABASES.DEFAULT,
+          COLLECTIONS.STUDY_STATS,
+          stats.$id,
+          {
+            totalCards: (stats.totalCards || 0) + flashcards.length
+          }
+        );
+      } else {
+        await databases.createDocument(
+          DATABASES.DEFAULT,
+          COLLECTIONS.STUDY_STATS,
+          generateId(),
+          {
+            userId,
+            totalCards: flashcards.length,
+            masteredCards: 0,
+            dueCards: 0,
+            studyStreak: 0,
+            totalStudySessions: 0,
+            lastStudyDate: null
+          }
+        );
+      }
     }
     
     toast.success("Flashcard set created successfully!");
     
     return {
-      id: newSet.id,
+      id: newSet.$id,
       title: newSet.title,
       description: newSet.description,
-      createdAt: newSet.createdAt.toISOString(),
+      createdAt: newSet.createdAt,
       lastStudied: null,
       cardCount: flashcards.length,
       category: newSet.category,
@@ -201,46 +262,60 @@ export async function updateFlashcardReview(
 ): Promise<void> {
   try {
     // Get the current card
-    const card = await prisma.flashcard.findUnique({
-      where: { id: cardId },
-      include: { set: true }
-    });
+    const card = await databases.getDocument(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARDS,
+      cardId
+    );
     
     if (!card) {
       throw new Error("Card not found");
     }
     
+    // Get the set information
+    const set = await databases.getDocument(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARD_SETS,
+      card.setId
+    );
+    
     // Calculate next review details using spaced repetition algorithm
     const { nextReviewDate, ease, interval, repetitions } = calculateNextReview(
       quality, 
-      card.interval, 
-      card.ease, 
-      card.repetitions
+      card.interval || 1, 
+      card.ease || 2.5, 
+      card.repetitions || 0
     );
     
     // Update the flashcard
-    await prisma.flashcard.update({
-      where: { id: cardId },
-      data: {
-        lastReviewed: new Date(),
-        nextReview: nextReviewDate,
+    await databases.updateDocument(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARDS,
+      cardId,
+      {
+        lastReviewed: new Date().toISOString(),
+        nextReview: nextReviewDate.toISOString(),
         ease,
         interval,
         repetitions,
       }
-    });
+    );
     
     // Update the set's lastStudied date
-    await prisma.flashcardSet.update({
-      where: { id: card.setId },
-      data: { lastStudied: new Date() }
-    });
+    await databases.updateDocument(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARD_SETS,
+      card.setId,
+      { 
+        lastStudied: new Date().toISOString() 
+      }
+    );
     
     // Update mastery for the set
     await updateSetMastery(card.setId);
     
     // Update user study streak
-    await updateStudyStreak(card.set.userId);
+    await updateStudyStreak(set.userId);
     
     if (quality >= 3) {
       toast("Good job! You're making progress.");
@@ -255,26 +330,35 @@ export async function updateFlashcardReview(
 
 async function updateSetMastery(setId: string): Promise<void> {
   try {
-    const allCards = await prisma.flashcard.findMany({
-      where: { setId }
-    });
+    const cardsResponse = await databases.listDocuments(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARDS,
+      [Query.equal("setId", setId)]
+    );
+    
+    const allCards = cardsResponse.documents;
     
     if (allCards.length === 0) return;
     
     // Consider a card mastered if it has repetitions >= 3 and last review was successful
-    const masteredCards = allCards.filter(card => card.repetitions >= 3);
+    const masteredCards = allCards.filter(card => (card.repetitions || 0) >= 3);
     const masteryPercentage = Math.round((masteredCards.length / allCards.length) * 100);
     
-    await prisma.flashcardSet.update({
-      where: { id: setId },
-      data: { mastery: masteryPercentage }
-    });
+    await databases.updateDocument(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARD_SETS,
+      setId,
+      { 
+        mastery: masteryPercentage 
+      }
+    );
     
-    // Also update user's total mastered cards
-    const set = await prisma.flashcardSet.findUnique({
-      where: { id: setId },
-      select: { userId: true }
-    });
+    // Get the set to find the user ID
+    const set = await databases.getDocument(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARD_SETS,
+      setId
+    );
     
     if (set) {
       await updateUserMasteredCards(set.userId);
@@ -286,44 +370,76 @@ async function updateSetMastery(setId: string): Promise<void> {
 
 async function updateUserMasteredCards(userId: string): Promise<void> {
   try {
+    // Get all flashcard sets for this user
+    const setsResponse = await databases.listDocuments(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARD_SETS,
+      [Query.equal("userId", userId)]
+    );
+    
+    const setIds = setsResponse.documents.map(set => set.$id);
+    
     // Count all cards by this user
-    const totalCards = await prisma.flashcard.count({
-      where: {
-        set: { userId }
-      }
-    });
+    let totalCards = 0;
+    let masteredCards = 0;
+    let dueCards = 0;
+    const now = new Date();
     
-    // Count mastered cards
-    const masteredCards = await prisma.flashcard.count({
-      where: {
-        set: { userId },
-        repetitions: { gte: 3 }
-      }
-    });
+    for (const setId of setIds) {
+      const cardsResponse = await databases.listDocuments(
+        DATABASES.DEFAULT,
+        COLLECTIONS.FLASHCARDS,
+        [Query.equal("setId", setId)]
+      );
+      
+      const cards = cardsResponse.documents;
+      totalCards += cards.length;
+      
+      // Count mastered cards
+      masteredCards += cards.filter(card => (card.repetitions || 0) >= 3).length;
+      
+      // Count due cards (those with nextReview date today or earlier)
+      dueCards += cards.filter(card => {
+        if (!card.nextReview) return true; // Cards never reviewed are due
+        return new Date(card.nextReview) <= now;
+      }).length;
+    }
     
-    // Count due cards (those with nextReview date today or earlier)
-    const dueCards = await prisma.flashcard.count({
-      where: {
-        set: { userId },
-        nextReview: { lte: new Date() }
-      }
-    });
+    // Update or create study stats
+    const statsResponse = await databases.listDocuments(
+      DATABASES.DEFAULT,
+      COLLECTIONS.STUDY_STATS,
+      [Query.equal("userId", userId)]
+    );
     
-    // Update study stats
-    await prisma.studyStats.upsert({
-      where: { userId },
-      update: {
-        totalCards,
-        masteredCards,
-        dueCards
-      },
-      create: {
-        userId,
-        totalCards,
-        masteredCards,
-        dueCards
-      }
-    });
+    if (statsResponse.total > 0) {
+      const stats = statsResponse.documents[0];
+      await databases.updateDocument(
+        DATABASES.DEFAULT,
+        COLLECTIONS.STUDY_STATS,
+        stats.$id,
+        {
+          totalCards,
+          masteredCards,
+          dueCards
+        }
+      );
+    } else {
+      await databases.createDocument(
+        DATABASES.DEFAULT,
+        COLLECTIONS.STUDY_STATS,
+        generateId(),
+        {
+          userId,
+          totalCards,
+          masteredCards,
+          dueCards,
+          studyStreak: 0,
+          totalStudySessions: 0,
+          lastStudyDate: null
+        }
+      );
+    }
   } catch (error) {
     console.error("Error updating user mastered cards:", error);
   }
@@ -332,9 +448,11 @@ async function updateUserMasteredCards(userId: string): Promise<void> {
 async function updateStudyStreak(userId: string): Promise<void> {
   try {
     // Get the user's current stats
-    const stats = await prisma.studyStats.findUnique({
-      where: { userId }
-    });
+    const statsResponse = await databases.listDocuments(
+      DATABASES.DEFAULT,
+      COLLECTIONS.STUDY_STATS,
+      [Query.equal("userId", userId)]
+    );
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -343,24 +461,32 @@ async function updateStudyStreak(userId: string): Promise<void> {
     yesterday.setDate(yesterday.getDate() - 1);
     
     // If no stats exist yet, create with streak of 1
-    if (!stats) {
-      await prisma.studyStats.create({
-        data: {
+    if (statsResponse.total === 0) {
+      await databases.createDocument(
+        DATABASES.DEFAULT,
+        COLLECTIONS.STUDY_STATS,
+        generateId(),
+        {
           userId,
           studyStreak: 1,
-          lastStudyDate: new Date(),
-          totalStudySessions: 1
+          lastStudyDate: new Date().toISOString(),
+          totalStudySessions: 1,
+          totalCards: 0,
+          masteredCards: 0,
+          dueCards: 0
         }
-      });
+      );
       return;
     }
+    
+    const stats = statsResponse.documents[0];
     
     const lastStudy = stats.lastStudyDate ? new Date(stats.lastStudyDate) : null;
     if (lastStudy) {
       lastStudy.setHours(0, 0, 0, 0);
     }
     
-    let streak = stats.studyStreak;
+    let streak = stats.studyStreak || 0;
     
     // If they already studied today, don't increment the streak or sessions
     if (lastStudy && lastStudy.getTime() === today.getTime()) {
@@ -377,14 +503,16 @@ async function updateStudyStreak(userId: string): Promise<void> {
     }
     
     // Update the study stats
-    await prisma.studyStats.update({
-      where: { userId },
-      data: {
+    await databases.updateDocument(
+      DATABASES.DEFAULT,
+      COLLECTIONS.STUDY_STATS,
+      stats.$id,
+      {
         studyStreak: streak,
-        lastStudyDate: new Date(),
-        totalStudySessions: { increment: 1 }
+        lastStudyDate: new Date().toISOString(),
+        totalStudySessions: (stats.totalStudySessions || 0) + 1
       }
-    });
+    );
   } catch (error) {
     console.error("Error updating study streak:", error);
   }
@@ -393,38 +521,77 @@ async function updateStudyStreak(userId: string): Promise<void> {
 export async function getStudyStats(userId: string): Promise<StudyStats> {
   try {
     // Get user stats or create if they don't exist
-    let stats = await prisma.studyStats.findUnique({
-      where: { userId }
-    });
+    const statsResponse = await databases.listDocuments(
+      DATABASES.DEFAULT,
+      COLLECTIONS.STUDY_STATS,
+      [Query.equal("userId", userId)]
+    );
     
-    if (!stats) {
-      stats = await prisma.studyStats.create({
-        data: { userId }
-      });
+    let stats;
+    
+    if (statsResponse.total === 0) {
+      // Create new stats document
+      stats = await databases.createDocument(
+        DATABASES.DEFAULT,
+        COLLECTIONS.STUDY_STATS,
+        generateId(),
+        {
+          userId,
+          totalCards: 0,
+          masteredCards: 0,
+          dueCards: 0,
+          studyStreak: 0,
+          totalStudySessions: 0,
+          lastStudyDate: null
+        }
+      );
+    } else {
+      stats = statsResponse.documents[0];
     }
     
-    // Update due cards count which could change daily
-    const dueCards = await prisma.flashcard.count({
-      where: {
-        set: { userId },
-        nextReview: { lte: new Date() }
-      }
-    });
+    // Count due cards which could change daily
+    let dueCards = 0;
+    const now = new Date();
     
-    if (dueCards !== stats.dueCards) {
-      await prisma.studyStats.update({
-        where: { userId },
-        data: { dueCards }
-      });
+    // Get all flashcard sets for this user
+    const setsResponse = await databases.listDocuments(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARD_SETS,
+      [Query.equal("userId", userId)]
+    );
+    
+    const setIds = setsResponse.documents.map(set => set.$id);
+    
+    for (const setId of setIds) {
+      const cardsResponse = await databases.listDocuments(
+        DATABASES.DEFAULT,
+        COLLECTIONS.FLASHCARDS,
+        [Query.equal("setId", setId)]
+      );
+      
+      dueCards += cardsResponse.documents.filter(card => {
+        if (!card.nextReview) return true; // Cards never reviewed are due
+        return new Date(card.nextReview) <= now;
+      }).length;
+    }
+    
+    // Update due cards count if it has changed
+    if (dueCards !== (stats.dueCards || 0)) {
+      await databases.updateDocument(
+        DATABASES.DEFAULT,
+        COLLECTIONS.STUDY_STATS,
+        stats.$id,
+        { dueCards }
+      );
       stats.dueCards = dueCards;
     }
     
     return {
-      totalCards: stats.totalCards,
-      masteredCards: stats.masteredCards,
-      dueCards: stats.dueCards,
-      studyStreak: stats.studyStreak,
-      totalStudySessions: stats.totalStudySessions,
+      totalCards: stats.totalCards || 0,
+      masteredCards: stats.masteredCards || 0,
+      dueCards: stats.dueCards || 0,
+      studyStreak: stats.studyStreak || 0,
+      totalStudySessions: stats.totalStudySessions || 0,
     };
   } catch (error) {
     console.error("Error getting study stats:", error);

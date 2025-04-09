@@ -1,18 +1,58 @@
 
-import { FlashcardSet, Flashcard, StudyStats } from "@/types";
+import { Flashcard, FlashcardSet, StudyStats } from "@/types";
 import { toast } from "sonner";
+import { 
+  account, 
+  databases, 
+  DATABASES, 
+  COLLECTIONS, 
+  generateId, 
+  getCurrentUser 
+} from "@/lib/appwrite";
+import { ID, Query } from "appwrite";
 
-const API_URL = "/api"; // This would point to your actual backend in production
-
-// These functions will be used in the browser environment
-// They make API calls to a backend server that uses Prisma
+// Helper function to check if the user is authenticated
+async function ensureAuthenticated() {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    throw new Error("User not authenticated");
+  }
+  return currentUser;
+}
 
 export async function getFlashcardSets(userId: string): Promise<FlashcardSet[]> {
   try {
-    // In a real application, this would be an API call
-    // For now, we'll return mock data for demonstration
-    console.log("Client API: Getting flashcard sets for user", userId);
-    return [];
+    // Validate authentication
+    await ensureAuthenticated();
+    
+    const response = await databases.listDocuments(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARD_SETS,
+      [Query.equal("userId", userId)]
+    );
+    
+    const sets = response.documents;
+    
+    const formattedSets = await Promise.all(sets.map(async (set) => {
+      const cardCountResponse = await databases.listDocuments(
+        DATABASES.DEFAULT,
+        COLLECTIONS.FLASHCARDS,
+        [Query.equal("setId", set.$id)]
+      );
+      
+      return {
+        id: set.$id,
+        title: set.title,
+        description: set.description,
+        createdAt: set.createdAt,
+        lastStudied: set.lastStudied || null,
+        cardCount: cardCountResponse.total,
+        category: set.category,
+        mastery: set.mastery || 0,
+      };
+    }));
+    
+    return formattedSets;
   } catch (error) {
     console.error("Error getting flashcard sets:", error);
     toast.error("Failed to fetch flashcard sets");
@@ -22,8 +62,31 @@ export async function getFlashcardSets(userId: string): Promise<FlashcardSet[]> 
 
 export async function getFlashcardSet(id: string): Promise<FlashcardSet | null> {
   try {
-    console.log("Client API: Getting flashcard set", id);
-    return null;
+    // Validate authentication
+    await ensureAuthenticated();
+    
+    const set = await databases.getDocument(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARD_SETS,
+      id
+    );
+    
+    const cardCountResponse = await databases.listDocuments(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARDS,
+      [Query.equal("setId", id)]
+    );
+    
+    return {
+      id: set.$id,
+      title: set.title,
+      description: set.description,
+      createdAt: set.createdAt,
+      lastStudied: set.lastStudied || null,
+      cardCount: cardCountResponse.total,
+      category: set.category,
+      mastery: set.mastery || 0,
+    };
   } catch (error) {
     console.error("Error getting flashcard set:", error);
     toast.error("Failed to fetch flashcard set");
@@ -33,8 +96,26 @@ export async function getFlashcardSet(id: string): Promise<FlashcardSet | null> 
 
 export async function getFlashcards(setId: string): Promise<Flashcard[]> {
   try {
-    console.log("Client API: Getting flashcards for set", setId);
-    return [];
+    // Validate authentication
+    await ensureAuthenticated();
+    
+    const response = await databases.listDocuments(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARDS,
+      [Query.equal("setId", setId)]
+    );
+    
+    return response.documents.map(card => ({
+      id: card.$id,
+      setId: card.setId,
+      question: card.question,
+      answer: card.answer,
+      lastReviewed: card.lastReviewed || null,
+      nextReview: card.nextReview || null,
+      ease: card.ease || 2.5,
+      interval: card.interval || 1,
+      repetitions: card.repetitions || 0,
+    }));
   } catch (error) {
     console.error("Error getting flashcards:", error);
     toast.error("Failed to fetch flashcards");
@@ -50,18 +131,56 @@ export async function createFlashcardSet(
   flashcards: { question: string; answer: string }[]
 ): Promise<FlashcardSet> {
   try {
-    console.log("Client API: Creating flashcard set", { userId, title, category });
+    // Validate authentication
+    await ensureAuthenticated();
     
-    // In a real app, this would send a POST request to your backend API
-    // For now, we'll return mock data
+    // Create the new flashcard set
+    const newSetId = generateId();
+    const newSet = await databases.createDocument(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARD_SETS,
+      newSetId,
+      {
+        title,
+        description,
+        category,
+        userId,
+        createdAt: new Date().toISOString(),
+        mastery: 0
+      }
+    );
+    
+    // Create all flashcards in the set
+    if (flashcards.length > 0) {
+      const createFlashcardsPromises = flashcards.map(card => 
+        databases.createDocument(
+          DATABASES.DEFAULT,
+          COLLECTIONS.FLASHCARDS,
+          generateId(),
+          {
+            question: card.question,
+            answer: card.answer,
+            setId: newSetId,
+            ease: 2.5,
+            interval: 1,
+            repetitions: 0
+          }
+        )
+      );
+      
+      await Promise.all(createFlashcardsPromises);
+    }
+    
+    toast.success("Flashcard set created successfully!");
+    
     return {
-      id: "mock-id-" + Date.now(),
-      title,
-      description,
-      createdAt: new Date().toISOString(),
+      id: newSet.$id,
+      title: newSet.title,
+      description: newSet.description,
+      createdAt: newSet.createdAt,
       lastStudied: null,
       cardCount: flashcards.length,
-      category,
+      category: newSet.category,
       mastery: 0,
     };
   } catch (error) {
@@ -76,8 +195,59 @@ export async function updateFlashcardReview(
   quality: number
 ): Promise<void> {
   try {
-    console.log("Client API: Updating flashcard review", { cardId, quality });
-    // In a real app, this would send a POST/PUT request to your backend
+    // Validate authentication
+    await ensureAuthenticated();
+    
+    // Call the API to update the review
+    const card = await databases.getDocument(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARDS,
+      cardId
+    );
+    
+    // Calculate new values based on SRS algorithm (simplified for client-side)
+    const now = new Date();
+    let interval = card.interval || 1;
+    let repetitions = card.repetitions || 0;
+    let ease = card.ease || 2.5;
+    
+    if (quality >= 3) {
+      repetitions++;
+      if (repetitions === 1) interval = 1;
+      else if (repetitions === 2) interval = 6;
+      else interval = Math.round(interval * ease);
+      ease = Math.max(1.3, ease + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+    } else {
+      repetitions = 0;
+      interval = 1;
+    }
+    
+    const nextReview = new Date();
+    nextReview.setDate(now.getDate() + interval);
+    
+    await databases.updateDocument(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARDS,
+      cardId,
+      {
+        lastReviewed: now.toISOString(),
+        nextReview: nextReview.toISOString(),
+        ease,
+        interval,
+        repetitions
+      }
+    );
+    
+    // Update set's last studied time
+    await databases.updateDocument(
+      DATABASES.DEFAULT,
+      COLLECTIONS.FLASHCARD_SETS,
+      card.setId,
+      { 
+        lastStudied: now.toISOString() 
+      }
+    );
+    
   } catch (error) {
     console.error("Error updating flashcard review:", error);
     toast.error("Failed to save your progress");
@@ -86,8 +256,27 @@ export async function updateFlashcardReview(
 
 export async function getStudyStats(userId: string): Promise<StudyStats> {
   try {
-    console.log("Client API: Getting study stats for user", userId);
-    // Return mock stats
+    // Validate authentication
+    await ensureAuthenticated();
+    
+    const statsResponse = await databases.listDocuments(
+      DATABASES.DEFAULT,
+      COLLECTIONS.STUDY_STATS,
+      [Query.equal("userId", userId)]
+    );
+    
+    if (statsResponse.total > 0) {
+      const stats = statsResponse.documents[0];
+      return {
+        totalCards: stats.totalCards || 0,
+        masteredCards: stats.masteredCards || 0,
+        dueCards: stats.dueCards || 0,
+        studyStreak: stats.studyStreak || 0,
+        totalStudySessions: stats.totalStudySessions || 0,
+      };
+    }
+    
+    // Return default stats if none exist
     return {
       totalCards: 0,
       masteredCards: 0,
@@ -104,5 +293,43 @@ export async function getStudyStats(userId: string): Promise<StudyStats> {
       studyStreak: 0,
       totalStudySessions: 0,
     };
+  }
+}
+
+// User authentication methods
+export async function register(email: string, password: string, name: string) {
+  try {
+    const user = await account.create(ID.unique(), email, password, name);
+    await account.createEmailSession(email, password);
+    return user;
+  } catch (error) {
+    console.error("Registration error:", error);
+    throw error;
+  }
+}
+
+export async function login(email: string, password: string) {
+  try {
+    return await account.createEmailSession(email, password);
+  } catch (error) {
+    console.error("Login error:", error);
+    throw error;
+  }
+}
+
+export async function logout() {
+  try {
+    return await account.deleteSession('current');
+  } catch (error) {
+    console.error("Logout error:", error);
+    throw error;
+  }
+}
+
+export async function getUser() {
+  try {
+    return await account.get();
+  } catch (error) {
+    return null;
   }
 }
