@@ -1,6 +1,7 @@
 
+import { Link } from "react-router-dom";
 import { SignIn, SignUp } from "@clerk/clerk-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function SignInForm() {
   return (
@@ -26,6 +27,14 @@ export function SignInForm() {
           }}
         />
       </CardContent>
+      <CardFooter className="flex justify-center mt-4 border-t pt-4">
+        <p className="text-sm text-muted-foreground">
+          Don't have an account?{" "}
+          <Link to="/sign-up" className="text-primary hover:underline">
+            Sign up
+          </Link>
+        </p>
+      </CardFooter>
     </Card>
   );
 }
@@ -54,6 +63,14 @@ export function SignUpForm() {
           }}
         />
       </CardContent>
+      <CardFooter className="flex justify-center mt-4 border-t pt-4">
+        <p className="text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link to="/sign-in" className="text-primary hover:underline">
+            Sign in
+          </Link>
+        </p>
+      </CardFooter>
     </Card>
   );
 }

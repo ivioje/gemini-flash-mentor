@@ -18,9 +18,9 @@ import CreateSet from "./pages/CreateSet";
 import FlashcardSetDetail from "./pages/FlashcardSetDetail";
 import StudySession from "./pages/StudySession";
 import NotFound from "./pages/NotFound";
-import AuthLayout from "./layouts/AuthLayout";
 import Profile from "./pages/Profile";
-import { SignInForm, SignUpForm } from "./components/AuthForms";
+import SignIn from "./pages/SignIn";
+import SignUp from "./pages/SignUp";
 
 const queryClient = new QueryClient();
 
@@ -34,18 +34,8 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
-              
-              <Route path="/sign-in" element={
-                <AuthLayout>
-                  <SignInForm />
-                </AuthLayout>
-              } />
-
-              <Route path="/sign-up" element={
-                <AuthLayout>
-                  <SignUpForm />
-                </AuthLayout>
-              } />
+              <Route path="/sign-in" element={<SignIn />} />
+              <Route path="/sign-up" element={<SignUp />} />
 
               <Route path="/dashboard" element={
                 <RequireAuth>

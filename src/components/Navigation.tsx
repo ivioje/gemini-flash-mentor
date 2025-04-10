@@ -2,7 +2,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { SignInButton, SignUpButton, UserButton } from "@clerk/clerk-react";
+import { UserButton } from "@clerk/clerk-react";
 import {
   BookOpen,
   Home,
@@ -80,26 +80,34 @@ export function Navigation() {
           {!isLoading && (
             <>
               {isAuthenticated ? (
-                <UserButton 
-                  afterSignOutUrl="/"
-                  appearance={{
-                    elements: {
-                      userButtonAvatarBox: "h-8 w-8 border-2 border-primary/20"
-                    }
-                  }}
-                />
+                <div className="flex items-center space-x-3">
+                  <Link to="/profile">
+                    <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Profile
+                    </Button>
+                  </Link>
+                  <UserButton 
+                    afterSignOutUrl="/"
+                    appearance={{
+                      elements: {
+                        userButtonAvatarBox: "h-8 w-8 border-2 border-primary/20"
+                      }
+                    }}
+                  />
+                </div>
               ) : (
                 <div className="flex space-x-2">
-                  <SignInButton mode="modal">
+                  <Link to="/sign-in">
                     <Button variant="outline" size="sm">
                       Sign in
                     </Button>
-                  </SignInButton>
-                  <SignUpButton mode="modal">
+                  </Link>
+                  <Link to="/sign-up">
                     <Button size="sm" className="bg-primary text-white hover:bg-primary/90">
                       Sign up
                     </Button>
-                  </SignUpButton>
+                  </Link>
                 </div>
               )}
             </>
@@ -136,18 +144,48 @@ export function Navigation() {
                     );
                   })}
                   
-                  {isAuthenticated && (
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start mt-4"
-                      onClick={() => {
-                        handleLogout();
-                        closeMenu();
-                      }}
-                    >
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Log out
-                    </Button>
+                  {isAuthenticated ? (
+                    <>
+                      <Link to="/profile" onClick={closeMenu}>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start"
+                        >
+                          <User className="h-4 w-4 mr-2" />
+                          Profile
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start mt-2"
+                        onClick={() => {
+                          handleLogout();
+                          closeMenu();
+                        }}
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Log out
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/sign-in" onClick={closeMenu}>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start mt-2"
+                        >
+                          Sign in
+                        </Button>
+                      </Link>
+                      <Link to="/sign-up" onClick={closeMenu}>
+                        <Button
+                          variant="default"
+                          className="w-full justify-start mt-2"
+                        >
+                          Sign up
+                        </Button>
+                      </Link>
+                    </>
                   )}
                 </nav>
               </SheetContent>

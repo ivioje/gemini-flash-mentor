@@ -1,11 +1,9 @@
-
 import { toast } from "sonner";
 import { 
   databases, 
   DATABASES, 
   COLLECTIONS, 
-  generateId, 
-  getCurrentUser 
+  generateId 
 } from "@/lib/appwrite";
 import { Flashcard, FlashcardSet, StudyStats } from "@/types";
 import { ID, Query } from "appwrite";
