@@ -1,6 +1,6 @@
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { getUser, login as apiLogin, logout as apiLogout, register as apiRegister } from "../services/clientApiService";
+import { createContext, useContext, ReactNode } from "react";
+import { useAuth as useClerkAuth, useUser } from "@clerk/clerk-react";
 
 // Define types
 type User = {
@@ -23,79 +23,42 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 // Auth provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Check for existing user session
-    const checkUser = async () => {
-      setIsLoading(true);
-      try {
-        const currentUser = await getUser();
-        setUser(currentUser);
-      } catch (error) {
-        console.error("Session validation error:", error);
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkUser();
-  }, []);
+  const { isLoaded, isSignedIn, signOut } = useClerkAuth();
+  const { user: clerkUser } = useUser();
+  
+  // Convert Clerk user to our app's user format
+  const user = clerkUser ? {
+    $id: clerkUser.id,
+    name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
+    email: clerkUser.primaryEmailAddress?.emailAddress || '',
+  } : null;
 
   // Login function
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      await apiLogin(email, password);
-      const user = await getUser();
-      setUser(user);
-    } catch (error) {
-      console.error("Login error:", error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+    // Using redirectToSignIn is handled by Clerk components
+    console.log("Login handled by Clerk components");
   };
 
   // Logout function
   const logout = async () => {
-    setIsLoading(true);
-    try {
-      await apiLogout();
-      setUser(null);
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    await signOut();
   };
 
   // Register function
   const register = async (email: string, password: string, name: string) => {
-    setIsLoading(true);
-    try {
-      await apiRegister(email, password, name);
-      const user = await getUser();
-      setUser(user);
-    } catch (error) {
-      console.error("Register error:", error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+    // Using redirectToSignUp is handled by Clerk components
+    console.log("Register handled by Clerk components");
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isLoading,
+        isLoading: !isLoaded,
         login,
         logout,
         register,
-        isAuthenticated: !!user,
+        isAuthenticated: !!isSignedIn,
       }}
     >
       {children}

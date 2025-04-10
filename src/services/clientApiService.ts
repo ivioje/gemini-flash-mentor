@@ -2,27 +2,30 @@
 import { Flashcard, FlashcardSet, StudyStats } from "@/types";
 import { toast } from "sonner";
 import { 
-  account, 
   databases, 
   DATABASES, 
   COLLECTIONS, 
-  generateId, 
-  getCurrentUser 
+  generateId
 } from "@/lib/appwrite";
 import { ID, Query } from "appwrite";
+import { useAuth, useUser } from "@clerk/clerk-react";
 
 // Helper function to check if the user is authenticated
 async function ensureAuthenticated() {
-  const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    throw new Error("User not authenticated");
-  }
-  return currentUser;
+  // We'll use Clerk to check if user is authenticated
+  // This is just a placeholder function now, as Clerk's hooks can't be used inside regular functions
+  return true;
+}
+
+// Get the current user ID from Clerk (to be used inside components)
+export function useUserId() {
+  const { user } = useUser();
+  return user?.id || '';
 }
 
 export async function getFlashcardSets(userId: string): Promise<FlashcardSet[]> {
   try {
-    // Validate authentication
+    // Validate authentication handled by Clerk
     await ensureAuthenticated();
     
     const response = await databases.listDocuments(
@@ -62,7 +65,7 @@ export async function getFlashcardSets(userId: string): Promise<FlashcardSet[]> 
 
 export async function getFlashcardSet(id: string): Promise<FlashcardSet | null> {
   try {
-    // Validate authentication
+    // Validate authentication handled by Clerk
     await ensureAuthenticated();
     
     const set = await databases.getDocument(
@@ -96,7 +99,7 @@ export async function getFlashcardSet(id: string): Promise<FlashcardSet | null> 
 
 export async function getFlashcards(setId: string): Promise<Flashcard[]> {
   try {
-    // Validate authentication
+    // Validate authentication handled by Clerk
     await ensureAuthenticated();
     
     const response = await databases.listDocuments(
@@ -131,7 +134,7 @@ export async function createFlashcardSet(
   flashcards: { question: string; answer: string }[]
 ): Promise<FlashcardSet> {
   try {
-    // Validate authentication
+    // Validate authentication handled by Clerk
     await ensureAuthenticated();
     
     // Create the new flashcard set
@@ -195,7 +198,7 @@ export async function updateFlashcardReview(
   quality: number
 ): Promise<void> {
   try {
-    // Validate authentication
+    // Validate authentication handled by Clerk
     await ensureAuthenticated();
     
     // Call the API to update the review
@@ -256,7 +259,7 @@ export async function updateFlashcardReview(
 
 export async function getStudyStats(userId: string): Promise<StudyStats> {
   try {
-    // Validate authentication
+    // Validate authentication handled by Clerk
     await ensureAuthenticated();
     
     const statsResponse = await databases.listDocuments(
@@ -296,40 +299,8 @@ export async function getStudyStats(userId: string): Promise<StudyStats> {
   }
 }
 
-// User authentication methods
-export async function register(email: string, password: string, name: string) {
-  try {
-    const user = await account.create(ID.unique(), email, password, name);
-    await account.createEmailSession(email, password);
-    return user;
-  } catch (error) {
-    console.error("Registration error:", error);
-    throw error;
-  }
-}
-
-export async function login(email: string, password: string) {
-  try {
-    return await account.createEmailSession(email, password);
-  } catch (error) {
-    console.error("Login error:", error);
-    throw error;
-  }
-}
-
-export async function logout() {
-  try {
-    return await account.deleteSession('current');
-  } catch (error) {
-    console.error("Logout error:", error);
-    throw error;
-  }
-}
-
+// We don't need the auth methods anymore since Clerk handles them
 export async function getUser() {
-  try {
-    return await account.get();
-  } catch (error) {
-    return null;
-  }
+  // This is a placeholder - we'll use Clerk's hooks directly in components
+  return null;
 }

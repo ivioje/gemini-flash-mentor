@@ -2,6 +2,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SignInButton, SignUpButton, UserButton } from "@clerk/clerk-react";
 import {
   BookOpen,
   Home,
@@ -14,15 +15,6 @@ import {
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 export function Navigation() {
   const location = useLocation();
@@ -49,14 +41,6 @@ export function Navigation() {
     } catch (error) {
       console.error("Error logging out:", error);
     }
-  };
-
-  const getUserInitials = () => {
-    if (!user?.name) return "U";
-    return user.name.split(" ")
-      .map(name => name[0])
-      .join("")
-      .toUpperCase();
   };
   
   return (
@@ -96,39 +80,26 @@ export function Navigation() {
           {!isLoading && (
             <>
               {isAuthenticated ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full">
-                      <Avatar className="h-8 w-8 border-2 border-primary/20">
-                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                          {getUserInitials()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile" className="cursor-pointer w-full flex items-center">
-                        <User className="mr-2 h-4 w-4" />
-                        Profile
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer flex items-center">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Log out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <UserButton 
+                  afterSignOutUrl="/"
+                  appearance={{
+                    elements: {
+                      userButtonAvatarBox: "h-8 w-8 border-2 border-primary/20"
+                    }
+                  }}
+                />
               ) : (
                 <div className="flex space-x-2">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to="/sign-in">Sign in</Link>
-                  </Button>
-                  <Button size="sm" className="bg-primary text-white hover:bg-primary/90" asChild>
-                    <Link to="/sign-up">Sign up</Link>
-                  </Button>
+                  <SignInButton mode="modal">
+                    <Button variant="outline" size="sm">
+                      Sign in
+                    </Button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <Button size="sm" className="bg-primary text-white hover:bg-primary/90">
+                      Sign up
+                    </Button>
+                  </SignUpButton>
                 </div>
               )}
             </>

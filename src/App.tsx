@@ -6,6 +6,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { 
+  SignedIn, 
+  SignedOut, 
+  RedirectToSignIn 
+} from "@clerk/clerk-react";
 
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
@@ -89,7 +94,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   }
   
   if (!isAuthenticated) {
-    return <Navigate to="/sign-in" replace />;
+    return <RedirectToSignIn />;
   }
   
   return <>{children}</>;

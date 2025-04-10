@@ -1,5 +1,5 @@
 
-import { Account, Client, Databases, ID, Query, Storage } from 'appwrite';
+import { Client, Databases, ID, Query, Storage } from 'appwrite';
 
 // Appwrite configuration
 const endpoint = 'https://cloud.appwrite.io/v1';
@@ -9,8 +9,7 @@ const projectId = '67f6569f00368918227f'; // Using the provided project ID
 const client = new Client();
 client.setEndpoint(endpoint).setProject(projectId);
 
-// Initialize Appwrite services
-export const account = new Account(client);
+// Initialize Appwrite services (only databases and storage, not account)
 export const databases = new Databases(client);
 export const storage = new Storage(client);
 
@@ -27,40 +26,3 @@ export const COLLECTIONS = {
 
 // Helper function to generate unique IDs
 export const generateId = () => ID.unique();
-
-// Authentication helpers
-export const getCurrentUser = async () => {
-  try {
-    return await account.get();
-  } catch (error) {
-    return null;
-  }
-};
-
-export const createAccount = async (email: string, password: string, name: string) => {
-  try {
-    await account.create(ID.unique(), email, password, name);
-    await login(email, password);
-  } catch (error) {
-    console.error('Error creating account:', error);
-    throw error;
-  }
-};
-
-export const login = async (email: string, password: string) => {
-  try {
-    return await account.createEmailSession(email, password);
-  } catch (error) {
-    console.error('Error during login:', error);
-    throw error;
-  }
-};
-
-export const logout = async () => {
-  try {
-    return await account.deleteSession('current');
-  } catch (error) {
-    console.error('Error during logout:', error);
-    throw error;
-  }
-};
