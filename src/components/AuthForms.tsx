@@ -13,9 +13,7 @@ export function SignInForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <SignIn
-          routing="path"
-          path="/sign-in"
+        <SignIn 
           signUpUrl="/sign-up"
           redirectUrl="/dashboard"
           appearance={{
@@ -49,9 +47,7 @@ export function SignUpForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <SignUp
-          routing="path"
-          path="/sign-up"
+        <SignUp 
           signInUrl="/sign-in"
           redirectUrl="/dashboard"
           appearance={{

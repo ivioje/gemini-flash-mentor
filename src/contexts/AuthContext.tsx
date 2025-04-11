@@ -1,6 +1,8 @@
 
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, ReactNode, useEffect, useState } from "react";
 import { useAuth as useClerkAuth, useUser } from "@clerk/clerk-react";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 // Define types
 type User = {
@@ -25,6 +27,16 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn, signOut } = useClerkAuth();
   const { user: clerkUser } = useUser();
+  const [firebaseLoaded, setFirebaseLoaded] = useState(false);
+  
+  // Listen for Firebase auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, () => {
+      setFirebaseLoaded(true);
+    });
+    
+    return () => unsubscribe();
+  }, []);
   
   // Convert Clerk user to our app's user format
   const user = clerkUser ? {
@@ -50,11 +62,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log("Register handled by Clerk components");
   };
 
+  const isFullyLoaded = isLoaded && firebaseLoaded;
+
   return (
     <AuthContext.Provider
       value={{
         user,
-        isLoading: !isLoaded,
+        isLoading: !isFullyLoaded,
         login,
         logout,
         register,
