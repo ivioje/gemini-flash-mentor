@@ -85,6 +85,8 @@ export async function getFlashcardSet(id: string): Promise<FlashcardSet | null> 
       created_at: setData.created_at?.toDate() || new Date(),
       updated_at: setData.updated_at?.toDate() || new Date(),
       user_id: setData.user_id,
+      public: setData.public || false,
+      tags: setData.tags || [],
       cardCount: cardsSnapshot.size,
       lastStudied: setData.lastStudied || null,
       mastery: setData.mastery || 0
@@ -143,7 +145,11 @@ export async function createFlashcardSet(
       user_id: userId,
       created_at: serverTimestamp(),
       updated_at: serverTimestamp(),
-      mastery: 0
+      public: false,
+      tags: [],
+      cardCount: flashcards.length,
+      mastery: 0,
+      lastStudied: null
     });
     
     // Create all flashcards in the set
@@ -172,7 +178,10 @@ export async function createFlashcardSet(
       created_at: new Date(),
       updated_at: new Date(),
       user_id: userId,
+      public: false,
+      tags: [],
       cardCount: flashcards.length,
+      lastStudied: null,
       mastery: 0,
     };
   } catch (error) {

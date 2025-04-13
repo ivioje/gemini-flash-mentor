@@ -53,18 +53,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Login function
   const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
   };
 
   // Logout function
   const logout = async () => {
-    await signOut(auth);
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Logout error:", error);
+      throw error;
+    }
   };
 
   // Register function
   const register = async (email: string, password: string, name: string) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(userCredential.user, { displayName: name });
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // Set display name
+      if (userCredential.user) {
+        await updateProfile(userCredential.user, { 
+          displayName: name 
+        });
+        // Force refresh user state
+        setCurrentUser({...userCredential.user});
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      throw error;
+    }
   };
 
   return (
