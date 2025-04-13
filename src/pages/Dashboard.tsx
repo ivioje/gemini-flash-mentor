@@ -11,7 +11,8 @@ import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 // Import from our refactored services
-import { getFlashcardSets, getStudyStats } from "@/services/clientApiService";
+import { getFlashcards, getFlashcardSets, getStudyStats } from "@/services/clientApiService";
+import { saveStudyStats } from "@/services/apiService";
 
 export default function Dashboard() {
   const [flashcardSets, setFlashcardSets] = useState<FlashcardSet[]>([]);
@@ -19,31 +20,67 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
-  useEffect(() => {
-    async function loadDashboardData() {
-      if (!user) return;
-      
-      try {
-        setIsLoading(true);
-        const [setsData, statsData] = await Promise.all([
-          getFlashcardSets(user.$id),
-          getStudyStats(user.$id),
-        ]);
-        
-        setFlashcardSets(setsData);
-        setStats(statsData);
-      } catch (error) {
-        console.error("Error loading dashboard data:", error);
-        toast.error("Failed to load your dashboard data");
-      } finally {
-        setIsLoading(false);
-      }
-    }
+useEffect(() => {
+  async function loadDashboardData() {
+    if (!user) return;
     
-    if (user) {
-      loadDashboardData();
+    try {
+      setIsLoading(true);
+      
+      // First get the current stats
+      const currentStats = await getStudyStats(user.$id);
+      
+      // Then get sets and cards data
+      const setsData = await getFlashcardSets(user.$id);
+      setFlashcardSets(setsData);
+
+      // Get all cards from all sets
+      const allCards = await Promise.all(
+        setsData.map(async (set) => {
+          const cardsData = await getFlashcards(set.id);
+          return cardsData;
+        })
+      );
+      const flattenedCards = allCards.flat();
+
+      // Count due cards (cards whose nextReview date is in the past)
+      const now = new Date();
+      const dueCardsCount = flattenedCards.filter(card => {
+        if (!card.nextReview) return false;
+        return new Date(card.nextReview) <= now;
+      }).length;
+
+      // Count mastered cards (cards with ease > 2.5 and interval > 7 days)
+      const masteredCardsCount = flattenedCards.filter(card => {
+        return card.ease > 2.5 && card.interval > 7;
+      }).length;
+      
+      // Update the stats with new calculated values
+      const updatedStats = {
+        ...currentStats, 
+        dueCards: dueCardsCount,
+        masteredCards: masteredCardsCount,
+        totalCards: flattenedCards.length,
+      };
+      
+      // Save the updated stats to Firestore
+      await saveStudyStats(user.$id, updatedStats);
+      
+      // Set the stats state with the updated values
+      setStats(updatedStats);
+      
+    } catch (error) {
+      console.error("Error loading dashboard data:", error);
+      toast.error("Failed to load your dashboard data");
+    } finally {
+      setIsLoading(false);
     }
-  }, [user]);
+  }
+  
+  if (user) {
+    loadDashboardData();
+  }
+}, [user]);
 
   if (isLoading) {
     return (

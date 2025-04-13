@@ -21,6 +21,7 @@ export async function updateFlashcardReview(
     // Get the current card
     const cardRef = doc(db, "flashcards", cardId);
     const cardSnap = await getDoc(cardRef);
+    console.log("Card snapshot:", cardSnap.data());
     
     if (!cardSnap.exists()) {
       throw new Error("Card not found");
@@ -85,7 +86,7 @@ export async function getStudyStats(userId: string): Promise<StudyStats> {
         totalCards: 0,
         masteredCards: 0,
         dueCards: 0,
-        studyStreak: 0,
+        studyStreak: 1,
         totalStudySessions: 0,
       };
     }
@@ -95,7 +96,7 @@ export async function getStudyStats(userId: string): Promise<StudyStats> {
       totalCards: stats.totalCards || 0,
       masteredCards: stats.masteredCards || 0,
       dueCards: stats.dueCards || 0,
-      studyStreak: stats.studyStreak || 0,
+      studyStreak: stats.studyStreak || 1,
       totalStudySessions: stats.totalStudySessions || 0,
     };
   } catch (error) {
@@ -104,7 +105,7 @@ export async function getStudyStats(userId: string): Promise<StudyStats> {
       totalCards: 0,
       masteredCards: 0,
       dueCards: 0,
-      studyStreak: 0,
+      studyStreak: 1,
       totalStudySessions: 0,
     };
   }

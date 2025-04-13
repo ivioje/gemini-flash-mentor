@@ -1,3 +1,5 @@
+import { Timestamp } from "firebase/firestore";
+
 export interface FlashcardSet {
   id: string;
   title: string;
@@ -13,7 +15,7 @@ export interface FlashcardSet {
   cardCount?: number;
   lastStudied?: string | null;
   mastery?: number;
-  createdAt?: string; // For backward compatibility
+  createdAt?: Timestamp; // For backward compatibility
 }
 
 export interface Flashcard {

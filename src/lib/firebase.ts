@@ -7,12 +7,12 @@ import { getStorage } from "firebase/storage";
 // Firebase configuration
 // Note: These are demo credentials that will work for testing purposes
 const firebaseConfig = {
-  apiKey: "AIzaSyBOxJjILYJxVnDCZ_WAi_KlpkOwrFl2-HI",
-  authDomain: "flash-mentor-demo.firebaseapp.com",
-  projectId: "flash-mentor-demo",
-  storageBucket: "flash-mentor-demo.appspot.com",
-  messagingSenderId: "723315945324",
-  appId: "1:723315945324:web:32fa8e72f9978301b0e969"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 // Initialize Firebase

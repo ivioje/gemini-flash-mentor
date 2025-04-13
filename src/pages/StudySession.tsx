@@ -5,16 +5,16 @@ import { Button } from "@/components/ui/button";
 import { MainLayout } from "@/layouts/MainLayout";
 import { Flashcard as FlashcardComponent } from "@/components/Flashcard";
 import { Flashcard, FlashcardSet } from "@/types";
-import { getFlashcardSet, getFlashcards, updateFlashcardReview } from "@/services/apiService";
+import { getFlashcardSet, getFlashcards, updateFlashcardReview, updateStudyStats } from "@/services/apiService";
 import { ArrowLeft, CheckCircle2, LoaderCircle, TimerIcon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function StudySession() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user } = useAuth();
   const [set, setSet] = useState<FlashcardSet | null>(null);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -65,25 +65,40 @@ export default function StudySession() {
 
   const handleRating = async (quality: number) => {
     try {
-      if (!flashcards[currentCardIndex]) return;
+      if (!flashcards[currentCardIndex] || !user) return;
       
       await updateFlashcardReview(flashcards[currentCardIndex].id, quality);
       setReviewedCount(prev => prev + 1);
       
-      // Go to next card or end session if done
-      if (currentCardIndex < flashcards.length - 1) {
-        setCurrentCardIndex(prev => prev + 1);
-      } else {
-        // Session complete
+      // Check if this was the last card
+      const isLastCard = currentCardIndex >= flashcards.length - 1;
+      
+      // If it's the last card, update stats before advancing
+      if (isLastCard) {
         const sessionDuration = sessionStartTime 
           ? Math.floor((Date.now() - sessionStartTime.getTime()) / 1000)
           : 0;
         
-        toast.success(`Study session completed! You've studied ${flashcards.length} cards in ${formatTime(sessionDuration)}`);
+        try {
+          await updateStudyStats(user.$id, {
+            duration: sessionDuration,
+            cardsStudied: flashcards.length,
+            setId: id as string
+          });
+          
+          toast.success(`Study session completed! You've studied ${flashcards.length} cards in ${formatTime(sessionDuration)}`);
+        } catch (error) {
+          console.error("Error saving study session:", error);
+          toast.error("Failed to save your study session");
+        }
       }
+      
+      // Always advance to next card (this will trigger the completed UI if it was the last card)
+      setCurrentCardIndex(prev => prev + 1);
+      
     } catch (error) {
-      console.error("Error updating card review:", error);
-      toast.error("Failed to save your progress");
+      console.error("Error handling rating:", error);
+      toast.error("Failed to handle rating");
     }
   };
 

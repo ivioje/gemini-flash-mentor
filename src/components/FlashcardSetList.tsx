@@ -56,7 +56,7 @@ export function FlashcardSetList({ sets }: FlashcardSetListProps) {
               </div>
             </CardContent>
             <CardFooter className="pt-0 text-xs text-muted-foreground">
-              Created {formatDistanceToNow(new Date(set.createdAt), { addSuffix: true })}
+              Created 
             </CardFooter>
           </Card>
         </Link>
