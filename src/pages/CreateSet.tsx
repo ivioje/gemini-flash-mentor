@@ -1,13 +1,10 @@
 
-// Remove any potential Clerk import that might exist in this file
-// and ensure we're only using Firebase auth
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CreateFlashcardSetForm } from "@/components/CreateFlashcardSetForm";
 import { MainLayout } from "@/layouts/MainLayout";
 import { toast } from "sonner";
-import { createFlashcardSet } from "@/services/clientApiService";
+import { createFlashcardSet } from "@/services/flashcardService";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function CreateSet() {

@@ -10,9 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { generateFlashcards } from "@/services/geminiService";
 import { Loader2, Plus, Trash, Wand2 } from "lucide-react";
 import { toast } from "sonner";
-import { createFlashcardSet } from "@/services/apiService";
-import { useNavigate } from "react-router-dom";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CATEGORIES = [
   "Science",
@@ -26,9 +24,13 @@ const CATEGORIES = [
   "Other",
 ];
 
-export function CreateFlashcardSetForm() {
-  const navigate = useNavigate();
-  const { user } = useUser();
+interface CreateFlashcardSetFormProps {
+  onSubmit: (data: any) => Promise<void>;
+  isSubmitting: boolean;
+}
+
+export function CreateFlashcardSetForm({ onSubmit, isSubmitting }: CreateFlashcardSetFormProps) {
+  const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -38,7 +40,6 @@ export function CreateFlashcardSetForm() {
   const [flashcards, setFlashcards] = useState<{ id: string; question: string; answer: string }[]>([
     { id: "1", question: "", answer: "" },
   ]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState("manual");
 
   const addCard = () => {
@@ -122,21 +123,21 @@ export function CreateFlashcardSetForm() {
     }
     
     try {
-      setIsSubmitting(true);
-      
       // Map to remove IDs since the API doesn't need them
       const cardsData = flashcards.map(({ question, answer }) => ({
         question,
         answer
       }));
       
-      await createFlashcardSet(user.id, title, description, category, cardsData);
-      navigate("/dashboard");
+      await onSubmit({
+        title,
+        description,
+        category,
+        cards: cardsData
+      });
     } catch (error) {
       console.error(error);
       toast.error("Error creating flashcard set");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 

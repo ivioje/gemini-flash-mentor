@@ -1,5 +1,5 @@
 
-import { createContext, useContext, ReactNode, useEffect, useState } from "react";
+import { createContext, useContext, ReactNode, useEffect } from "react";
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
@@ -9,21 +9,13 @@ import {
   User as FirebaseUser
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { useUserStore } from "@/stores/userStore";
 
 // Define types
-type User = {
-  $id: string;
-  name: string;
-  email: string;
-};
-
 type AuthContextType = {
-  user: User | null;
-  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
-  isAuthenticated: boolean;
 };
 
 // Create context
@@ -31,25 +23,25 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 // Auth provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { setUser, setLoading } = useUserStore();
   
   // Listen for Firebase auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setIsLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser({
+          $id: firebaseUser.uid,
+          name: firebaseUser.displayName || 'User',
+          email: firebaseUser.email || '',
+        });
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
     });
     
     return () => unsubscribe();
-  }, []);
-  
-  // Convert Firebase user to our app's user format
-  const user = currentUser ? {
-    $id: currentUser.uid,
-    name: currentUser.displayName || 'User',
-    email: currentUser.email || '',
-  } : null;
+  }, [setUser, setLoading]);
 
   // Login function
   const login = async (email: string, password: string) => {
@@ -80,8 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await updateProfile(userCredential.user, { 
           displayName: name 
         });
-        // Force refresh user state
-        setCurrentUser({...userCredential.user});
       }
     } catch (error) {
       console.error("Registration error:", error);
@@ -92,12 +82,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user,
-        isLoading,
         login,
         logout,
         register,
-        isAuthenticated: !!currentUser,
       }}
     >
       {children}
@@ -111,5 +98,14 @@ export function useAuth() {
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context;
+  
+  // Get user state from Zustand store
+  const { user, isLoading, isAuthenticated } = useUserStore();
+  
+  return {
+    ...context,
+    user,
+    isLoading,
+    isAuthenticated
+  };
 }

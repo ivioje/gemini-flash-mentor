@@ -1,4 +1,3 @@
-
 export interface FlashcardSet {
   id: string;
   title: string;
@@ -35,4 +34,11 @@ export interface StudyStats {
   dueCards: number;
   studyStreak: number;
   totalStudySessions: number;
+}
+
+// User type (for auth)
+export interface User {
+  $id: string;
+  name: string;
+  email: string;
 }

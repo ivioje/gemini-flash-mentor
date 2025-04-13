@@ -1,5 +1,6 @@
+
 import { Flashcard, FlashcardSet, StudyStats } from "@/types";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUserStore } from "@/stores/userStore";
 
 // Re-export functions from flashcard service
 export { 
@@ -17,12 +18,12 @@ export {
 
 // Helper hook to get the current user ID
 export function useUserId() {
-  const { user } = useAuth();
+  const { user } = useUserStore();
   return user?.$id || '';
 }
 
 // Placeholder for backward compatibility
 export async function getUser() {
-  // This is a placeholder - we'll use Firebase Auth directly in components
+  // Using Zustand store instead of direct Firebase calls
   return null;
 }
