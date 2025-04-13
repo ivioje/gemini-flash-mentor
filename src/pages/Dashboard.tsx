@@ -10,8 +10,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
-// Import from the client service instead of the direct Prisma service
-import * as apiService from "@/services/clientApiService";
+// Import from our refactored services
+import { getFlashcardSets, getStudyStats } from "@/services/clientApiService";
 
 export default function Dashboard() {
   const [flashcardSets, setFlashcardSets] = useState<FlashcardSet[]>([]);
@@ -26,8 +26,8 @@ export default function Dashboard() {
       try {
         setIsLoading(true);
         const [setsData, statsData] = await Promise.all([
-          apiService.getFlashcardSets(user.$id),
-          apiService.getStudyStats(user.$id),
+          getFlashcardSets(user.$id),
+          getStudyStats(user.$id),
         ]);
         
         setFlashcardSets(setsData);

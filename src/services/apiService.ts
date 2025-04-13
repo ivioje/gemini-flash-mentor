@@ -1,6 +1,16 @@
+
 import { Flashcard, FlashcardSet, StudyStats } from "@/types";
 import { toast } from "sonner";
-import { clientDb } from "@/lib/database";
+import { db } from "@/lib/firebase";
+import { 
+  collection, 
+  doc, 
+  getDoc, 
+  getDocs, 
+  updateDoc, 
+  query, 
+  where 
+} from "firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Get the current user ID

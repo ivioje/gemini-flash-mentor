@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { MainLayout } from "@/layouts/MainLayout";
 import { Flashcard as FlashcardComponent } from "@/components/Flashcard";
 import { Flashcard, FlashcardSet } from "@/types";
-import { getFlashcardSet, getFlashcards } from "@/services/apiService";
+import { getFlashcardSet, getFlashcards } from "@/services/clientApiService";
 import { ArrowLeft, BookOpen, Clock, LoaderCircle, Share } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
