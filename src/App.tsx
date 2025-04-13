@@ -6,11 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { 
-  SignedIn, 
-  SignedOut, 
-  RedirectToSignIn 
-} from "@clerk/clerk-react";
 
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
@@ -84,7 +79,12 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   }
   
   if (!isAuthenticated) {
-    return <RedirectToSignIn />;
+    return <div className="flex flex-col items-center justify-center min-h-screen">
+      <p className="mb-4">You need to be signed in to access this page</p>
+      <a href="/sign-in" className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90">
+        Sign in
+      </a>
+    </div>;
   }
   
   return <>{children}</>;

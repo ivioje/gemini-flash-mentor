@@ -2,7 +2,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { UserButton } from "@clerk/clerk-react";
 import {
   BookOpen,
   Home,
@@ -15,6 +14,7 @@ import {
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export function Navigation() {
   const location = useLocation();
@@ -43,6 +43,15 @@ export function Navigation() {
     }
   };
   
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
       <div className="container flex h-16 items-center justify-between">
@@ -87,14 +96,11 @@ export function Navigation() {
                       Profile
                     </Button>
                   </Link>
-                  <UserButton 
-                    afterSignOutUrl="/"
-                    appearance={{
-                      elements: {
-                        userButtonAvatarBox: "h-8 w-8 border-2 border-primary/20"
-                      }
-                    }}
-                  />
+                  <Avatar className="h-8 w-8 border-2 border-primary/20">
+                    <AvatarFallback>
+                      {user?.name ? getInitials(user.name) : "U"}
+                    </AvatarFallback>
+                  </Avatar>
                 </div>
               ) : (
                 <div className="flex space-x-2">

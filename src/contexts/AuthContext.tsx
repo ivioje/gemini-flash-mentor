@@ -1,8 +1,14 @@
 
 import { createContext, useContext, ReactNode, useEffect, useState } from "react";
-import { useAuth as useClerkAuth, useUser } from "@clerk/clerk-react";
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut,
+  onAuthStateChanged,
+  updateProfile,
+  User as FirebaseUser
+} from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
 
 // Define types
 type User = {
@@ -25,54 +31,51 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 // Auth provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { isLoaded, isSignedIn, signOut } = useClerkAuth();
-  const { user: clerkUser } = useUser();
-  const [firebaseLoaded, setFirebaseLoaded] = useState(false);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Listen for Firebase auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, () => {
-      setFirebaseLoaded(true);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setIsLoading(false);
     });
     
     return () => unsubscribe();
   }, []);
   
-  // Convert Clerk user to our app's user format
-  const user = clerkUser ? {
-    $id: clerkUser.id,
-    name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
-    email: clerkUser.primaryEmailAddress?.emailAddress || '',
+  // Convert Firebase user to our app's user format
+  const user = currentUser ? {
+    $id: currentUser.uid,
+    name: currentUser.displayName || 'User',
+    email: currentUser.email || '',
   } : null;
 
   // Login function
   const login = async (email: string, password: string) => {
-    // Using redirectToSignIn is handled by Clerk components
-    console.log("Login handled by Clerk components");
+    await signInWithEmailAndPassword(auth, email, password);
   };
 
   // Logout function
   const logout = async () => {
-    await signOut();
+    await signOut(auth);
   };
 
   // Register function
   const register = async (email: string, password: string, name: string) => {
-    // Using redirectToSignUp is handled by Clerk components
-    console.log("Register handled by Clerk components");
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(userCredential.user, { displayName: name });
   };
-
-  const isFullyLoaded = isLoaded && firebaseLoaded;
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isLoading: !isFullyLoaded,
+        isLoading,
         login,
         logout,
         register,
-        isAuthenticated: !!isSignedIn,
+        isAuthenticated: !!currentUser,
       }}
     >
       {children}

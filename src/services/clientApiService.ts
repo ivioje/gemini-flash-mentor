@@ -1,61 +1,25 @@
-
 import { Flashcard, FlashcardSet, StudyStats } from "@/types";
 import { toast } from "sonner";
-import { 
-  databases, 
-  DATABASES, 
-  COLLECTIONS, 
-  generateId
-} from "@/lib/appwrite";
-import { ID, Query } from "appwrite";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { getFlashcardSets as getFirebaseFlashcardSets } from "@/services/firebaseService";
+import { useAuth } from "@/contexts/AuthContext";
+
+// Get the current user ID from our Auth Context
+export function useUserId() {
+  const { user } = useAuth();
+  return user?.$id || '';
+}
 
 // Helper function to check if the user is authenticated
 async function ensureAuthenticated() {
-  // We'll use Clerk to check if user is authenticated
-  // This is just a placeholder function now, as Clerk's hooks can't be used inside regular functions
+  // This is just a placeholder function
   return true;
-}
-
-// Get the current user ID from Clerk (to be used inside components)
-export function useUserId() {
-  const { user } = useUser();
-  return user?.id || '';
 }
 
 export async function getFlashcardSets(userId: string): Promise<FlashcardSet[]> {
   try {
-    // Validate authentication handled by Clerk
-    await ensureAuthenticated();
-    
-    const response = await databases.listDocuments(
-      DATABASES.DEFAULT,
-      COLLECTIONS.FLASHCARD_SETS,
-      [Query.equal("userId", userId)]
-    );
-    
-    const sets = response.documents;
-    
-    const formattedSets = await Promise.all(sets.map(async (set) => {
-      const cardCountResponse = await databases.listDocuments(
-        DATABASES.DEFAULT,
-        COLLECTIONS.FLASHCARDS,
-        [Query.equal("setId", set.$id)]
-      );
-      
-      return {
-        id: set.$id,
-        title: set.title,
-        description: set.description,
-        createdAt: set.createdAt,
-        lastStudied: set.lastStudied || null,
-        cardCount: cardCountResponse.total,
-        category: set.category,
-        mastery: set.mastery || 0,
-      };
-    }));
-    
-    return formattedSets;
+    // Get flashcard sets from Firebase
+    const sets = await getFirebaseFlashcardSets(userId);
+    return sets;
   } catch (error) {
     console.error("Error getting flashcard sets:", error);
     toast.error("Failed to fetch flashcard sets");

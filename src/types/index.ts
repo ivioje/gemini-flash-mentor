@@ -3,11 +3,13 @@ export interface FlashcardSet {
   id: string;
   title: string;
   description: string;
-  createdAt: string;
-  lastStudied: string | null;
-  cardCount: number;
   category: string;
-  mastery: number;
+  cards?: Flashcard[];
+  created_at: Date;
+  updated_at: Date;
+  user_id: string;
+  public?: boolean;
+  tags?: string[];
 }
 
 export interface Flashcard {

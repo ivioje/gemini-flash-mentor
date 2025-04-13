@@ -1,25 +1,23 @@
 
 import { useState } from "react";
 import { MainLayout } from "@/layouts/MainLayout";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut, User } from "lucide-react";
 
 export default function Profile() {
-  const { user, isLoaded } = useUser();
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
 
-  if (!isLoaded) {
-    return (
-      <MainLayout>
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-        </div>
-      </MainLayout>
-    );
-  }
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
   return (
     <MainLayout>
@@ -43,15 +41,11 @@ export default function Profile() {
               <CardContent className="space-y-4">
                 <div className="flex items-center space-x-4">
                   <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                    {user?.imageUrl ? (
-                      <img src={user.imageUrl} alt={user.fullName || 'User'} className="h-16 w-16 rounded-full" />
-                    ) : (
-                      <User className="h-8 w-8 text-primary" />
-                    )}
+                    <User className="h-8 w-8 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-medium">{user?.fullName || 'User'}</h3>
-                    <p className="text-sm text-muted-foreground">{user?.emailAddresses[0]?.emailAddress}</p>
+                    <h3 className="font-medium">{user?.name || 'User'}</h3>
+                    <p className="text-sm text-muted-foreground">{user?.email}</p>
                   </div>
                 </div>
               </CardContent>
@@ -62,7 +56,7 @@ export default function Profile() {
                 <CardTitle>Account Management</CardTitle>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" onClick={() => window.location.href = '/user/sign-out'}>
+                <Button variant="outline" onClick={handleLogout}>
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign out
                 </Button>
