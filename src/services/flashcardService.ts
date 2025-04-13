@@ -7,12 +7,10 @@ import {
   getDocs, 
   getDoc, 
   addDoc, 
-  updateDoc, 
   query, 
   where, 
   orderBy,
   serverTimestamp,
-  Timestamp,
   DocumentData,
   QueryDocumentSnapshot
 } from "firebase/firestore";
@@ -66,28 +64,7 @@ export async function getFlashcardSet(id: string): Promise<FlashcardSet | null> 
       return null;
     }
     
-    const setData = docSnapshot.data();
-    const cardsQuery = query(
-      collection(db, "flashcards"),
-      where("setId", "==", id)
-    );
-    
-    const cardsSnapshot = await getDocs(cardsQuery);
-    
-    return {
-      id: docSnapshot.id,
-      title: setData.title,
-      description: setData.description,
-      category: setData.category,
-      created_at: setData.created_at?.toDate() || new Date(),
-      updated_at: setData.updated_at?.toDate() || new Date(),
-      user_id: setData.user_id,
-      public: setData.public || false,
-      tags: setData.tags || [],
-      cardCount: cardsSnapshot.size,
-      lastStudied: setData.lastStudied || null,
-      mastery: setData.mastery || 0
-    };
+    return convertFlashcardSet(docSnapshot as QueryDocumentSnapshot<DocumentData>);
   } catch (error) {
     console.error("Error getting flashcard set:", error);
     toast.error("Failed to fetch flashcard set");

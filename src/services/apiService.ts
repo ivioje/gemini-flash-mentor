@@ -1,4 +1,3 @@
-
 import { Flashcard, FlashcardSet, StudyStats } from "@/types";
 import { toast } from "sonner";
 import { db } from "@/lib/firebase";
@@ -17,11 +16,11 @@ import {
   serverTimestamp,
   increment
 } from "firebase/firestore";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUserStore } from "@/stores/userStore";
 
 // Get the current user ID
 export function useUserId() {
-  const { user } = useAuth();
+  const { user } = useUserStore();
   return user?.$id || '';
 }
 
