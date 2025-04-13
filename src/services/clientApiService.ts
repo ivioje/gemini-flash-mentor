@@ -1,6 +1,20 @@
+
 import { Flashcard, FlashcardSet, StudyStats } from "@/types";
 import { toast } from "sonner";
-import { getFlashcardSets as getFirebaseFlashcardSets } from "@/services/firebaseService";
+import { 
+  collection, 
+  doc, 
+  getDocs, 
+  getDoc, 
+  addDoc, 
+  updateDoc, 
+  query, 
+  where, 
+  orderBy,
+  serverTimestamp,
+  Timestamp
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Get the current user ID from our Auth Context
@@ -9,16 +23,35 @@ export function useUserId() {
   return user?.$id || '';
 }
 
-// Helper function to check if the user is authenticated
-async function ensureAuthenticated() {
-  // This is just a placeholder function
-  return true;
-}
+// Helper function to convert Firestore data to our app's data model
+const convertFlashcardSet = (doc: any): FlashcardSet => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    title: data.title,
+    description: data.description,
+    category: data.category,
+    created_at: data.created_at?.toDate() || new Date(),
+    updated_at: data.updated_at?.toDate() || new Date(),
+    user_id: data.user_id,
+    public: data.public || false,
+    tags: data.tags || [],
+    cardCount: data.cardCount || 0,
+    lastStudied: data.lastStudied || null,
+    mastery: data.mastery || 0
+  };
+};
 
 export async function getFlashcardSets(userId: string): Promise<FlashcardSet[]> {
   try {
-    // Get flashcard sets from Firebase
-    const sets = await getFirebaseFlashcardSets(userId);
+    const q = query(
+      collection(db, "flashcard_sets"),
+      where("user_id", "==", userId),
+      orderBy("created_at", "desc")
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const sets = querySnapshot.docs.map(convertFlashcardSet);
     return sets;
   } catch (error) {
     console.error("Error getting flashcard sets:", error);
@@ -29,30 +62,32 @@ export async function getFlashcardSets(userId: string): Promise<FlashcardSet[]> 
 
 export async function getFlashcardSet(id: string): Promise<FlashcardSet | null> {
   try {
-    // Validate authentication handled by Clerk
-    await ensureAuthenticated();
+    const docRef = doc(db, "flashcard_sets", id);
+    const docSnapshot = await getDoc(docRef);
     
-    const set = await databases.getDocument(
-      DATABASES.DEFAULT,
-      COLLECTIONS.FLASHCARD_SETS,
-      id
+    if (!docSnapshot.exists()) {
+      return null;
+    }
+    
+    const setData = docSnapshot.data();
+    const cardsQuery = query(
+      collection(db, "flashcards"),
+      where("setId", "==", id)
     );
     
-    const cardCountResponse = await databases.listDocuments(
-      DATABASES.DEFAULT,
-      COLLECTIONS.FLASHCARDS,
-      [Query.equal("setId", id)]
-    );
+    const cardsSnapshot = await getDocs(cardsQuery);
     
     return {
-      id: set.$id,
-      title: set.title,
-      description: set.description,
-      createdAt: set.createdAt,
-      lastStudied: set.lastStudied || null,
-      cardCount: cardCountResponse.total,
-      category: set.category,
-      mastery: set.mastery || 0,
+      id: docSnapshot.id,
+      title: setData.title,
+      description: setData.description,
+      category: setData.category,
+      created_at: setData.created_at?.toDate() || new Date(),
+      updated_at: setData.updated_at?.toDate() || new Date(),
+      user_id: setData.user_id,
+      cardCount: cardsSnapshot.size,
+      lastStudied: setData.lastStudied || null,
+      mastery: setData.mastery || 0
     };
   } catch (error) {
     console.error("Error getting flashcard set:", error);
@@ -63,26 +98,27 @@ export async function getFlashcardSet(id: string): Promise<FlashcardSet | null> 
 
 export async function getFlashcards(setId: string): Promise<Flashcard[]> {
   try {
-    // Validate authentication handled by Clerk
-    await ensureAuthenticated();
-    
-    const response = await databases.listDocuments(
-      DATABASES.DEFAULT,
-      COLLECTIONS.FLASHCARDS,
-      [Query.equal("setId", setId)]
+    const q = query(
+      collection(db, "flashcards"),
+      where("setId", "==", setId)
     );
     
-    return response.documents.map(card => ({
-      id: card.$id,
-      setId: card.setId,
-      question: card.question,
-      answer: card.answer,
-      lastReviewed: card.lastReviewed || null,
-      nextReview: card.nextReview || null,
-      ease: card.ease || 2.5,
-      interval: card.interval || 1,
-      repetitions: card.repetitions || 0,
-    }));
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        setId: data.setId,
+        question: data.question,
+        answer: data.answer,
+        lastReviewed: data.lastReviewed || null,
+        nextReview: data.nextReview || null,
+        ease: data.ease || 2.5,
+        interval: data.interval || 1,
+        repetitions: data.repetitions || 0,
+      };
+    });
   } catch (error) {
     console.error("Error getting flashcards:", error);
     toast.error("Failed to fetch flashcards");
@@ -98,41 +134,29 @@ export async function createFlashcardSet(
   flashcards: { question: string; answer: string }[]
 ): Promise<FlashcardSet> {
   try {
-    // Validate authentication handled by Clerk
-    await ensureAuthenticated();
-    
     // Create the new flashcard set
-    const newSetId = generateId();
-    const newSet = await databases.createDocument(
-      DATABASES.DEFAULT,
-      COLLECTIONS.FLASHCARD_SETS,
-      newSetId,
-      {
-        title,
-        description,
-        category,
-        userId,
-        createdAt: new Date().toISOString(),
-        mastery: 0
-      }
-    );
+    const newSetRef = collection(db, "flashcard_sets");
+    const newSet = await addDoc(newSetRef, {
+      title,
+      description,
+      category,
+      user_id: userId,
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp(),
+      mastery: 0
+    });
     
     // Create all flashcards in the set
     if (flashcards.length > 0) {
       const createFlashcardsPromises = flashcards.map(card => 
-        databases.createDocument(
-          DATABASES.DEFAULT,
-          COLLECTIONS.FLASHCARDS,
-          generateId(),
-          {
-            question: card.question,
-            answer: card.answer,
-            setId: newSetId,
-            ease: 2.5,
-            interval: 1,
-            repetitions: 0
-          }
-        )
+        addDoc(collection(db, "flashcards"), {
+          question: card.question,
+          answer: card.answer,
+          setId: newSet.id,
+          ease: 2.5,
+          interval: 1,
+          repetitions: 0
+        })
       );
       
       await Promise.all(createFlashcardsPromises);
@@ -141,13 +165,14 @@ export async function createFlashcardSet(
     toast.success("Flashcard set created successfully!");
     
     return {
-      id: newSet.$id,
-      title: newSet.title,
-      description: newSet.description,
-      createdAt: newSet.createdAt,
-      lastStudied: null,
+      id: newSet.id,
+      title,
+      description,
+      category,
+      created_at: new Date(),
+      updated_at: new Date(),
+      user_id: userId,
       cardCount: flashcards.length,
-      category: newSet.category,
       mastery: 0,
     };
   } catch (error) {
@@ -162,21 +187,21 @@ export async function updateFlashcardReview(
   quality: number
 ): Promise<void> {
   try {
-    // Validate authentication handled by Clerk
-    await ensureAuthenticated();
+    // Get the current card
+    const cardRef = doc(db, "flashcards", cardId);
+    const cardSnap = await getDoc(cardRef);
     
-    // Call the API to update the review
-    const card = await databases.getDocument(
-      DATABASES.DEFAULT,
-      COLLECTIONS.FLASHCARDS,
-      cardId
-    );
+    if (!cardSnap.exists()) {
+      throw new Error("Card not found");
+    }
+    
+    const cardData = cardSnap.data();
     
     // Calculate new values based on SRS algorithm (simplified for client-side)
     const now = new Date();
-    let interval = card.interval || 1;
-    let repetitions = card.repetitions || 0;
-    let ease = card.ease || 2.5;
+    let interval = cardData.interval || 1;
+    let repetitions = cardData.repetitions || 0;
+    let ease = cardData.ease || 2.5;
     
     if (quality >= 3) {
       repetitions++;
@@ -192,28 +217,20 @@ export async function updateFlashcardReview(
     const nextReview = new Date();
     nextReview.setDate(now.getDate() + interval);
     
-    await databases.updateDocument(
-      DATABASES.DEFAULT,
-      COLLECTIONS.FLASHCARDS,
-      cardId,
-      {
-        lastReviewed: now.toISOString(),
-        nextReview: nextReview.toISOString(),
-        ease,
-        interval,
-        repetitions
-      }
-    );
+    // Update the flashcard
+    await updateDoc(cardRef, {
+      lastReviewed: now.toISOString(),
+      nextReview: nextReview.toISOString(),
+      ease,
+      interval,
+      repetitions
+    });
     
     // Update set's last studied time
-    await databases.updateDocument(
-      DATABASES.DEFAULT,
-      COLLECTIONS.FLASHCARD_SETS,
-      card.setId,
-      { 
-        lastStudied: now.toISOString() 
-      }
-    );
+    const setRef = doc(db, "flashcard_sets", cardData.setId);
+    await updateDoc(setRef, { 
+      lastStudied: now.toISOString() 
+    });
     
   } catch (error) {
     console.error("Error updating flashcard review:", error);
@@ -223,33 +240,31 @@ export async function updateFlashcardReview(
 
 export async function getStudyStats(userId: string): Promise<StudyStats> {
   try {
-    // Validate authentication handled by Clerk
-    await ensureAuthenticated();
-    
-    const statsResponse = await databases.listDocuments(
-      DATABASES.DEFAULT,
-      COLLECTIONS.STUDY_STATS,
-      [Query.equal("userId", userId)]
+    const q = query(
+      collection(db, "study_stats"),
+      where("userId", "==", userId)
     );
     
-    if (statsResponse.total > 0) {
-      const stats = statsResponse.documents[0];
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      // Return default stats if none exist
       return {
-        totalCards: stats.totalCards || 0,
-        masteredCards: stats.masteredCards || 0,
-        dueCards: stats.dueCards || 0,
-        studyStreak: stats.studyStreak || 0,
-        totalStudySessions: stats.totalStudySessions || 0,
+        totalCards: 0,
+        masteredCards: 0,
+        dueCards: 0,
+        studyStreak: 0,
+        totalStudySessions: 0,
       };
     }
     
-    // Return default stats if none exist
+    const stats = querySnapshot.docs[0].data();
     return {
-      totalCards: 0,
-      masteredCards: 0,
-      dueCards: 0,
-      studyStreak: 0,
-      totalStudySessions: 0,
+      totalCards: stats.totalCards || 0,
+      masteredCards: stats.masteredCards || 0,
+      dueCards: stats.dueCards || 0,
+      studyStreak: stats.studyStreak || 0,
+      totalStudySessions: stats.totalStudySessions || 0,
     };
   } catch (error) {
     console.error("Error getting study stats:", error);
@@ -263,8 +278,8 @@ export async function getStudyStats(userId: string): Promise<StudyStats> {
   }
 }
 
-// We don't need the auth methods anymore since Clerk handles them
+// We don't need the auth methods anymore since Firebase Auth handles them
 export async function getUser() {
-  // This is a placeholder - we'll use Clerk's hooks directly in components
+  // This is a placeholder - we'll use Firebase Auth directly in components
   return null;
 }

@@ -10,6 +10,11 @@ export interface FlashcardSet {
   user_id: string;
   public?: boolean;
   tags?: string[];
+  // Add these properties to match what's used in components
+  cardCount?: number;
+  lastStudied?: string | null;
+  mastery?: number;
+  createdAt?: string; // For backward compatibility
 }
 
 export interface Flashcard {
