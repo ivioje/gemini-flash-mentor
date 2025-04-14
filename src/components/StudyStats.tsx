@@ -23,7 +23,11 @@ export function StudyStats({ stats }: StudyStatsProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.studyStreak} days</div>
+          <div className="text-2xl font-bold">
+            {stats.studyStreak === 1
+              ? stats.studyStreak + " day"
+              : stats.studyStreak + " days"}
+          </div>
           <p className="text-xs text-muted-foreground mt-1">Keep it going!</p>
         </CardContent>
       </Card>

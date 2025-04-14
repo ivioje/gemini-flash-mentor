@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Timestamp } from "firebase/firestore";
 
 interface FlashcardSetListProps {
   sets: FlashcardSet[];
@@ -69,9 +70,9 @@ export function FlashcardSetList({ sets }: FlashcardSetListProps) {
                 <Progress value={set.mastery} className="h-1" />
               </div>
             </CardContent>
-            <CardFooter className="pt-0 text-xs text-muted-foreground">
-              Created
-            </CardFooter>
+            {/* <CardFooter className="pt-0 text-xs text-muted-foreground">
+              Created on {formatDate(set.createdAt)}
+            </CardFooter> */}
           </Card>
         </Link>
       ))}
