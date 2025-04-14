@@ -1,73 +1,90 @@
-# Welcome to your Lovable project
+# 💎 Gem Study Flashcard App
 
-## Project info
+Gem Study is a modern, intelligent flashcard web application built with React, Firebase, and Google's Gemini AI. It helps students and lifelong learners create, manage, and study flashcard sets — all while tracking progress and enhancing their learning experience with AI-assisted suggestions.
 
-**URL**: https://lovable.dev/projects/ccc3c8e3-c2e6-4e60-8174-f4ff0e0a0c03
+## ✨ Features
 
-## How can I edit this code?
+- ✅ **Create & Manage Flashcard Sets**  
+  Organize topics and subjects into easily accessible flashcard collections.
 
-There are several ways of editing your application.
+- 🧠 **AI-Powered Flashcard Generation**  
+  Automatically generate flashcards using the Gemini API from simple topic prompts.
 
-**Use Lovable**
+- 📊 **Study Statistics & Streak Tracking**  
+  Monitor your learning activity, study sessions, and maintain daily streaks.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/ccc3c8e3-c2e6-4e60-8174-f4ff0e0a0c03) and start prompting.
+- 🔒 **Authentication**  
+  Secure sign-in and sign-up flow powered by Firebase Authentication.
 
-Changes made via Lovable will be committed automatically to this repo.
+- 🔔 **Beautiful UI**  
+  Built with **Shadcn/UI** and Tailwind CSS to provide a sleek, responsive, and accessible interface.
 
-**Use your preferred IDE**
+## 🛠️ Tech Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Frontend**: React + TypeScript
+- **Styling/UI**: Shadcn/UI, Tailwind CSS
+- **Authentication & Backend**: Firebase (Auth, Firestore, Server Timestamps)
+- **AI Integration**: Gemini API (Google's GenAI)
+- **State & Data Fetching**: React Tanstack Query
+- **Notifications**: Sonner Toast + Custom Alerts
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🚀 Getting Started
 
-Follow these steps:
+### Prerequisites
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- Node.js ≥ 18
+- Firebase Project (for Firestore & Auth)
+- Gemini API Key from [Google AI Studio](https://makersuite.google.com/)
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Installation
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```bash
+git clone https://github.com/ivioje/gem-study-flashcards.git
+cd gem-study-flashcards
+npm install
 ```
 
-**Edit a file directly in GitHub**
+### Environment Variables
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Create a `.env` file in the root of the project and add:
 
-**Use GitHub Codespaces**
+```bash
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+VITE_GEMINI_API_KEY=your_gemini_api_key
+VITE_GEMINI_API_URL=your_gemini_api_url
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Run Locally
 
-## What technologies are used for this project?
+```bash
+ npm run dev
+```
 
-This project is built with:
+### 📈 Future Improvements
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- AI quiz generation based on flashcards
 
-## How can I deploy this project?
+- Flashcard sharing and public study sets
 
-Simply open [Lovable](https://lovable.dev/projects/ccc3c8e3-c2e6-4e60-8174-f4ff0e0a0c03) and click on Share -> Publish.
+- Rich text or image support in cards
 
-## Can I connect a custom domain to my Lovable project?
+- Mobile app version with React Native
 
-Yes it is!
+### 🙌 Acknowledgements
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- Shadcn/UI
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- Firebase
+
+- Gemini API
+
+- TanStack Query (React Query)
+
+### 📄 License
+
+This project is open source under the MIT License.
