@@ -1,4 +1,4 @@
-import { StudyStats as StudyStatsType } from "@/types";
+import { StudyStats as StudyStatsType } from "@/interfaces";
 import { BookOpen, Calendar, Flame, Zap } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

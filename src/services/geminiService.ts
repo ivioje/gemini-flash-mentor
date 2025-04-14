@@ -1,6 +1,5 @@
-
-const GEMINI_API_KEY = "AIzaSyCOA-8RkNK0twwMZYDlkAuHzfw7CJFTWiU";
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const GEMINI_API_URL = import.meta.env.VITE_GEMINI_API_URL;
 
 interface FlashcardGenerated {
   question: string;
@@ -33,7 +32,7 @@ export async function generateFlashcards(
     });
 
     const data = await response.json();
-    
+
     if (!response.ok) {
       console.error("Gemini API error:", data);
       throw new Error("Failed to generate flashcards");
@@ -50,16 +49,15 @@ export async function generateFlashcards(
     if (!jsonMatch) {
       throw new Error("Could not extract JSON from response");
     }
-    
+
     const flashcards = JSON.parse(jsonMatch[0]);
-    return flashcards.slice(0, count); // Ensure we only return the requested number
+    return flashcards.slice(0, count);
   } catch (error) {
     console.error("Error generating flashcards:", error);
     throw new Error("Failed to generate flashcards");
   }
 }
 
-// Add the askGemini function that matches what's being imported in CreateSet.tsx
 export async function askGemini(topic: string): Promise<FlashcardGenerated[]> {
   return generateFlashcards(topic, 5);
 }

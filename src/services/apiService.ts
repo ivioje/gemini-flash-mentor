@@ -1,40 +1,42 @@
-import { Flashcard, FlashcardSet, StudyStats } from "@/types";
+import { Flashcard, FlashcardSet, StudyStats } from "@/interfaces";
 import { toast } from "sonner";
 import { db } from "@/lib/firebase";
-import { 
-  collection, 
-  doc, 
-  getDoc, 
-  getDocs, 
-  updateDoc, 
-  query, 
-  where, 
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  updateDoc,
+  query,
+  where,
   QueryDocumentSnapshot,
   DocumentData,
   orderBy,
   addDoc,
   serverTimestamp,
-  increment
+  increment,
+  Timestamp,
 } from "firebase/firestore";
 import { useUserStore } from "@/stores/userStore";
 
 // Get the current user ID
 export function useUserId() {
   const { user } = useUserStore();
-  return user?.$id || '';
+  return user?.$id || "";
 }
 
-// Helper function to convert Firestore data to our app's data model
-const convertFlashcardSet = (doc: QueryDocumentSnapshot<DocumentData>): FlashcardSet => {
+const convertFlashcardSet = (
+  doc: QueryDocumentSnapshot<DocumentData>
+): FlashcardSet => {
   const data = doc.data();
   return {
     id: doc.id,
     title: data.title,
     description: data.description,
-    category: data.category || 'General',
+    category: data.category || "General",
     created_at: data.created_at?.toDate() || new Date(),
     updated_at: data.updated_at?.toDate() || new Date(),
-    user_id: data.user_id || '',
+    user_id: data.user_id || "",
     public: data.public || false,
     tags: data.tags || [],
     cardCount: data.cardCount || 0,
@@ -44,14 +46,16 @@ const convertFlashcardSet = (doc: QueryDocumentSnapshot<DocumentData>): Flashcar
 };
 
 // Function to get all flashcard sets for a user
-export async function getFlashcardSets(userId: string): Promise<FlashcardSet[]> {
+export async function getFlashcardSets(
+  userId: string
+): Promise<FlashcardSet[]> {
   try {
     const q = query(
       collection(db, "flashcard_sets"),
       where("user_id", "==", userId),
       orderBy("created_at", "desc")
     );
-    
+
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(convertFlashcardSet);
   } catch (error) {
@@ -62,16 +66,20 @@ export async function getFlashcardSets(userId: string): Promise<FlashcardSet[]> 
 }
 
 // Get a specific flashcard set by ID
-export async function getFlashcardSet(id: string): Promise<FlashcardSet | null> {
+export async function getFlashcardSet(
+  id: string
+): Promise<FlashcardSet | null> {
   try {
     const docRef = doc(db, "flashcard_sets", id);
     const docSnapshot = await getDoc(docRef);
-    
+
     if (!docSnapshot.exists()) {
       return null;
     }
-    
-    return convertFlashcardSet(docSnapshot as QueryDocumentSnapshot<DocumentData>);
+
+    return convertFlashcardSet(
+      docSnapshot as QueryDocumentSnapshot<DocumentData>
+    );
   } catch (error) {
     console.error("Error getting flashcard set:", error);
     toast.error("Failed to fetch flashcard set");
@@ -82,14 +90,11 @@ export async function getFlashcardSet(id: string): Promise<FlashcardSet | null> 
 // Get flashcards for a specific set
 export async function getFlashcards(setId: string): Promise<Flashcard[]> {
   try {
-    const q = query(
-      collection(db, "flashcards"),
-      where("setId", "==", setId)
-    );
-    
+    const q = query(collection(db, "flashcards"), where("setId", "==", setId));
+
     const querySnapshot = await getDocs(q);
-    
-    return querySnapshot.docs.map(doc => {
+
+    return querySnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -132,27 +137,27 @@ export async function createFlashcardSet(
       tags: [],
       cardCount: flashcards.length,
       mastery: 0,
-      lastStudied: null
+      lastStudied: null,
     });
-    
+
     // Create all flashcards in the set
     if (flashcards.length > 0) {
-      const createFlashcardsPromises = flashcards.map(card => 
+      const createFlashcardsPromises = flashcards.map((card) =>
         addDoc(collection(db, "flashcards"), {
           question: card.question,
           answer: card.answer,
           setId: newSet.id,
           ease: 2.5,
           interval: 1,
-          repetitions: 0
+          repetitions: 0,
         })
       );
-      
+
       await Promise.all(createFlashcardsPromises);
     }
-    
+
     toast.success("Flashcard set created successfully!");
-    
+
     return {
       id: newSet.id,
       title,
@@ -182,48 +187,50 @@ export async function updateFlashcardReview(
     // Get the current card
     const cardRef = doc(db, "flashcards", cardId);
     const cardSnap = await getDoc(cardRef);
-    
+
     if (!cardSnap.exists()) {
       throw new Error("Card not found");
     }
-    
+
     const cardData = cardSnap.data();
-    
+
     // Calculate new values based on SRS algorithm (simplified for client-side)
     const now = new Date();
     let interval = cardData.interval || 1;
     let repetitions = cardData.repetitions || 0;
     let ease = cardData.ease || 2.5;
-    
+
     if (quality >= 3) {
       repetitions++;
       if (repetitions === 1) interval = 1;
       else if (repetitions === 2) interval = 6;
       else interval = Math.round(interval * ease);
-      ease = Math.max(1.3, ease + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+      ease = Math.max(
+        1.3,
+        ease + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)
+      );
     } else {
       repetitions = 0;
       interval = 1;
     }
-    
+
     const nextReview = new Date();
     nextReview.setDate(now.getDate() + interval);
-    
+
     // Update the flashcard
     await updateDoc(cardRef, {
       lastReviewed: now.toISOString(),
       nextReview: nextReview.toISOString(),
       ease,
       interval,
-      repetitions
+      repetitions,
     });
-    
+
     // Update set's last studied time
     const setRef = doc(db, "flashcard_sets", cardData.setId);
-    await updateDoc(setRef, { 
-      lastStudied: now.toISOString() 
+    await updateDoc(setRef, {
+      lastStudied: now.toISOString(),
     });
-    
   } catch (error) {
     console.error("Error updating flashcard review:", error);
     toast.error("Failed to save your progress");
@@ -236,9 +243,9 @@ export async function getStudyStats(userId: string): Promise<StudyStats> {
       collection(db, "study_stats"),
       where("userId", "==", userId)
     );
-    
+
     const querySnapshot = await getDocs(q);
-    
+
     if (querySnapshot.empty) {
       // Return default stats if none exist
       return {
@@ -249,7 +256,7 @@ export async function getStudyStats(userId: string): Promise<StudyStats> {
         totalStudySessions: 0,
       };
     }
-    
+
     const stats = querySnapshot.docs[0].data();
     return {
       totalCards: stats.totalCards || 0,
@@ -270,30 +277,30 @@ export async function getStudyStats(userId: string): Promise<StudyStats> {
   }
 }
 
-export async function saveStudyStats(userId: string, stats: StudyStats): Promise<void> {
+export async function saveStudyStats(
+  userId: string,
+  stats: StudyStats
+): Promise<void> {
   try {
-    // First, check if stats document already exists for this user
     const q = query(
       collection(db, "study_stats"),
       where("userId", "==", userId)
     );
-    
+
     const querySnapshot = await getDocs(q);
-    
+
     if (querySnapshot.empty) {
-      // Create new stats document if none exists
       await addDoc(collection(db, "study_stats"), {
         userId,
         totalCards: stats.totalCards,
         masteredCards: stats.masteredCards,
         dueCards: stats.dueCards,
-        studyStreak: stats.studyStreak, 
+        studyStreak: stats.studyStreak,
         totalStudySessions: stats.totalStudySessions,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       });
     } else {
-      // Update existing stats document
       const docId = querySnapshot.docs[0].id;
       await updateDoc(doc(db, "study_stats", docId), {
         totalCards: stats.totalCards,
@@ -301,7 +308,7 @@ export async function saveStudyStats(userId: string, stats: StudyStats): Promise
         dueCards: stats.dueCards,
         studyStreak: stats.studyStreak,
         totalStudySessions: stats.totalStudySessions,
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       });
     }
   } catch (error) {
@@ -310,75 +317,58 @@ export async function saveStudyStats(userId: string, stats: StudyStats): Promise
   }
 }
 
-// Add this to your apiService.js/ts file
-export async function updateStudyStats(userId: string, sessionData: {
-  duration: number,
-  cardsStudied: number,
-  setId: string
-}): Promise<void> {
+export async function updateStudyStats(
+  userId: string,
+  sessionData: { duration: number; cardsStudied: number; setId: string }
+): Promise<void> {
   try {
-    // First check if stats document exists
     const q = query(
       collection(db, "study_stats"),
       where("userId", "==", userId)
     );
-    
+
     const querySnapshot = await getDocs(q);
-    
+
     if (querySnapshot.empty) {
-      // Create new stats document
       await addDoc(collection(db, "study_stats"), {
         userId,
         totalStudySessions: 1,
-        lastStudyDate: serverTimestamp(),
-        studyStreak: 1, // Initialize streak
-        // Add other fields as needed
+        lastStudyDate: Timestamp.now(),
+        studyStreak: 1,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       });
     } else {
-      // Update existing stats
       const docId = querySnapshot.docs[0].id;
       const existingStats = querySnapshot.docs[0].data();
-      
-      // Calculate streak (maintain or increment)
+
       const lastStudyDate = existingStats.lastStudyDate?.toDate();
       let updatedStreak = existingStats.studyStreak || 1;
-      
+
       if (lastStudyDate) {
         const today = new Date();
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
-        
+
         // If last study was today, maintain streak
         // If last study was yesterday, increment streak
         // Otherwise reset streak to 1
         if (lastStudyDate.toDateString() === today.toDateString()) {
-          // Streak stays the same (studied earlier today)
+          return updatedStreak;
         } else if (lastStudyDate.toDateString() === yesterday.toDateString()) {
-          updatedStreak++; // Studied yesterday, increment streak
+          updatedStreak++;
         } else {
-          updatedStreak = 1; // Reset streak
+          updatedStreak = 1;
         }
       }
-      
+
       await updateDoc(doc(db, "study_stats", docId), {
         totalStudySessions: increment(1),
-        lastStudyDate: serverTimestamp(),
+        lastStudyDate: Timestamp.now(),
         studyStreak: updatedStreak,
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       });
     }
-    
-    // Also log this specific study session if you want to track individual sessions
-    await addDoc(collection(db, "study_sessions"), {
-      userId,
-      setId: sessionData.setId,
-      duration: sessionData.duration,
-      cardsStudied: sessionData.cardsStudied,
-      completedAt: serverTimestamp()
-    });
-    
   } catch (error) {
     console.error("Error updating study stats:", error);
     throw error;

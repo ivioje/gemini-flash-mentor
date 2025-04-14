@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FlashcardSet } from "@/types";
+import { FlashcardSet } from "@/interfaces";
 import { formatDistanceToNow } from "date-fns";
 
 import { Book, Clock } from "lucide-react";

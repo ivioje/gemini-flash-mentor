@@ -1,24 +1,24 @@
-
 import { db } from "@/lib/firebase";
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
+import {
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
   orderBy,
   serverTimestamp,
   DocumentData,
-  QueryDocumentSnapshot
+  QueryDocumentSnapshot,
 } from "firebase/firestore";
-import { FlashcardSet, Flashcard } from "@/types";
+import { FlashcardSet, Flashcard } from "@/interfaces";
 
-// Helper function to convert Firestore data to our app's data model
-const convertFlashcardSet = (doc: QueryDocumentSnapshot<DocumentData>): FlashcardSet => {
+const convertFlashcardSet = (
+  doc: QueryDocumentSnapshot<DocumentData>
+): FlashcardSet => {
   const data = doc.data();
   return {
     id: doc.id,
@@ -30,19 +30,20 @@ const convertFlashcardSet = (doc: QueryDocumentSnapshot<DocumentData>): Flashcar
     updated_at: data.updated_at?.toDate() || new Date(),
     user_id: data.user_id,
     public: data.public || false,
-    tags: data.tags || []
+    tags: data.tags || [],
   };
 };
 
-// Flashcard sets
-export const getFlashcardSets = async (userId: string): Promise<FlashcardSet[]> => {
+export const getFlashcardSets = async (
+  userId: string
+): Promise<FlashcardSet[]> => {
   try {
     const q = query(
-      collection(db, "flashcard_sets"), 
+      collection(db, "flashcard_sets"),
       where("user_id", "==", userId),
       orderBy("created_at", "desc")
     );
-    
+
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(convertFlashcardSet);
   } catch (error) {
@@ -54,11 +55,11 @@ export const getFlashcardSets = async (userId: string): Promise<FlashcardSet[]> 
 export const getPublicFlashcardSets = async (): Promise<FlashcardSet[]> => {
   try {
     const q = query(
-      collection(db, "flashcard_sets"), 
+      collection(db, "flashcard_sets"),
       where("public", "==", true),
       orderBy("created_at", "desc")
     );
-    
+
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(convertFlashcardSet);
   } catch (error) {
@@ -67,14 +68,16 @@ export const getPublicFlashcardSets = async (): Promise<FlashcardSet[]> => {
   }
 };
 
-export const getFlashcardSetById = async (id: string): Promise<FlashcardSet> => {
+export const getFlashcardSetById = async (
+  id: string
+): Promise<FlashcardSet> => {
   try {
     const docSnap = await getDoc(doc(db, "flashcard_sets", id));
-    
+
     if (!docSnap.exists()) {
       throw new Error("Flashcard set not found");
     }
-    
+
     return convertFlashcardSet(docSnap as QueryDocumentSnapshot<DocumentData>);
   } catch (error) {
     console.error("Error getting flashcard set:", error);
@@ -91,7 +94,7 @@ export const createFlashcardSet = async (
       created_at: serverTimestamp(),
       updated_at: serverTimestamp(),
     });
-    
+
     return docRef.id;
   } catch (error) {
     console.error("Error creating flashcard set:", error);
@@ -100,7 +103,7 @@ export const createFlashcardSet = async (
 };
 
 export const updateFlashcardSet = async (
-  id: string, 
+  id: string,
   data: Partial<Omit<FlashcardSet, "id" | "created_at" | "updated_at">>
 ): Promise<void> => {
   try {
@@ -123,14 +126,13 @@ export const deleteFlashcardSet = async (id: string): Promise<void> => {
   }
 };
 
-// Study sessions
-export const saveStudySession = async (studyData: any): Promise<string> => {
+export const saveStudySession = async (studyData): Promise<string> => {
   try {
     const docRef = await addDoc(collection(db, "study_sessions"), {
       ...studyData,
       timestamp: serverTimestamp(),
     });
-    
+
     return docRef.id;
   } catch (error) {
     console.error("Error saving study session:", error);
@@ -138,19 +140,19 @@ export const saveStudySession = async (studyData: any): Promise<string> => {
   }
 };
 
-export const getUserStudyStats = async (userId: string): Promise<any[]> => {
+export const getUserStudyStats = async (userId: string) => {
   try {
     const q = query(
       collection(db, "study_sessions"),
       where("user_id", "==", userId),
       orderBy("timestamp", "desc")
     );
-    
+
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({
+    return querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-      timestamp: doc.data().timestamp?.toDate() || new Date()
+      timestamp: doc.data().timestamp?.toDate() || new Date(),
     }));
   } catch (error) {
     console.error("Error getting user study stats:", error);

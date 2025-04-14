@@ -1,6 +1,5 @@
-
-import { create } from 'zustand';
-import { User } from '@/types';
+import { create } from "zustand";
+import { User } from "../interfaces";
 
 interface UserState {
   user: User | null;
@@ -14,10 +13,11 @@ export const useUserStore = create<UserState>((set) => ({
   user: null,
   isLoading: true,
   isAuthenticated: false,
-  setUser: (user) => set({ 
-    user, 
-    isAuthenticated: !!user,
-    isLoading: false 
-  }),
+  setUser: (user) =>
+    set({
+      user,
+      isAuthenticated: !!user,
+      isLoading: false,
+    }),
   setLoading: (isLoading) => set({ isLoading }),
 }));

@@ -1,12 +1,11 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MainLayout } from "@/layouts/MainLayout";
 import { Flashcard as FlashcardComponent } from "@/components/Flashcard";
-import { Flashcard, FlashcardSet } from "@/types";
-import { getFlashcardSet, getFlashcards } from "@/services/clientApiService";
+import { Flashcard, FlashcardSet } from "@/interfaces";
+import { getFlashcardSet, getFlashcards } from "@/services/apiService";
 import { ArrowLeft, BookOpen, Clock, LoaderCircle, Share } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,19 +23,19 @@ export default function FlashcardSetDetail() {
   useEffect(() => {
     async function loadData() {
       if (!id) return;
-      
+
       try {
         setIsLoading(true);
         const [setData, cardsData] = await Promise.all([
           getFlashcardSet(id),
-          getFlashcards(id)
+          getFlashcards(id),
         ]);
-        
+
         if (!setData) {
           navigate("/dashboard");
           return;
         }
-        
+
         setSet(setData);
         setFlashcards(cardsData);
       } catch (error) {
@@ -45,16 +44,16 @@ export default function FlashcardSetDetail() {
         setIsLoading(false);
       }
     }
-    
+
     loadData();
   }, [id, navigate]);
 
   const handlePreviousCard = () => {
-    setCurrentCardIndex(prev => Math.max(0, prev - 1));
+    setCurrentCardIndex((prev) => Math.max(0, prev - 1));
   };
 
   const handleNextCard = () => {
-    setCurrentCardIndex(prev => Math.min(flashcards.length - 1, prev + 1));
+    setCurrentCardIndex((prev) => Math.min(flashcards.length - 1, prev + 1));
   };
 
   if (isLoading) {
@@ -74,11 +73,14 @@ export default function FlashcardSetDetail() {
   return (
     <MainLayout>
       <div className="mb-6">
-        <Link to="/dashboard" className="text-muted-foreground hover:text-foreground flex items-center mb-4">
+        <Link
+          to="/dashboard"
+          className="text-muted-foreground hover:text-foreground flex items-center mb-4"
+        >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Dashboard
         </Link>
-        
+
         <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -95,15 +97,18 @@ export default function FlashcardSetDetail() {
                 <Clock className="h-4 w-4 mr-1" />
                 <span>
                   {set.lastStudied
-                    ? `Studied ${formatDistanceToNow(new Date(set.lastStudied), {
-                        addSuffix: true,
-                      })}`
+                    ? `Studied ${formatDistanceToNow(
+                        new Date(set.lastStudied),
+                        {
+                          addSuffix: true,
+                        }
+                      )}`
                     : "Never studied"}
                 </span>
               </div>
             </div>
           </div>
-          
+
           <div className="flex gap-2 self-start">
             <Button variant="outline" size="sm">
               <Share className="h-4 w-4 mr-2" />
@@ -125,7 +130,7 @@ export default function FlashcardSetDetail() {
           </div>
           <Progress value={set.mastery} className="h-2" />
         </div>
-        
+
         <Tabs defaultValue="preview">
           <TabsList>
             <TabsTrigger value="preview">Preview Cards</TabsTrigger>
@@ -136,8 +141,14 @@ export default function FlashcardSetDetail() {
               <div className="max-w-xl mx-auto">
                 <FlashcardComponent
                   flashcard={flashcards[currentCardIndex]}
-                  onNext={currentCardIndex < flashcards.length - 1 ? handleNextCard : undefined}
-                  onPrevious={currentCardIndex > 0 ? handlePreviousCard : undefined}
+                  onNext={
+                    currentCardIndex < flashcards.length - 1
+                      ? handleNextCard
+                      : undefined
+                  }
+                  onPrevious={
+                    currentCardIndex > 0 ? handlePreviousCard : undefined
+                  }
                   showNavigation={true}
                 />
                 <div className="text-center mt-4 text-sm text-muted-foreground">
