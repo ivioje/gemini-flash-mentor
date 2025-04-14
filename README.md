@@ -75,7 +75,7 @@ VITE_GEMINI_API_URL=your_gemini_api_url
 
 - Mobile app version with React Native
 
-### 🙌 Acknowledgements
+### Acknowledgements
 
 - Shadcn/UI
 
@@ -84,6 +84,7 @@ VITE_GEMINI_API_URL=your_gemini_api_url
 - Gemini API
 
 - TanStack Query (React Query)
+(Project bootstrapped using lovable).
 
 ### 📄 License
 
