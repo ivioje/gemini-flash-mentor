@@ -1,7 +1,9 @@
-
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
+
 import {
   BookOpen,
   Home,
@@ -11,43 +13,38 @@ import {
   Plus,
   User,
 } from "lucide-react";
-import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export function Navigation() {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isAuthenticated, isLoading, logout } = useAuth();
-  
+
   const closeMenu = () => {
     setIsMenuOpen(false);
   };
-  
+
   const navItems = [
     { path: "/", label: "Home", icon: Home },
-    { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, authRequired: true },
+    {
+      path: "/dashboard",
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      authRequired: true,
+    },
     { path: "/create", label: "Create", icon: Plus, authRequired: true },
   ];
-  
-  const filteredNavItems = navItems.filter(item => 
-    !item.authRequired || isAuthenticated
+
+  const filteredNavItems = navItems.filter(
+    (item) => !item.authRequired || isAuthenticated
   );
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error("Error logging out:", error);
-    }
-  };
-  
   const getInitials = (name: string) => {
     return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
       .toUpperCase()
       .substring(0, 2);
   };
@@ -60,13 +57,13 @@ export function Navigation() {
             <BookOpen className="h-6 w-6 text-primary" />
             <span className="font-bold text-xl">GemMentor</span>
           </Link>
-          
+
           {/* Desktop navigation */}
           <nav className="hidden md:flex ml-6 space-x-2">
             {filteredNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
-              
+
               return (
                 <Link key={item.path} to={item.path}>
                   <Button
@@ -82,16 +79,20 @@ export function Navigation() {
             })}
           </nav>
         </div>
-        
+
         <div className="flex items-center space-x-3">
           <ThemeToggle />
-          
+
           {!isLoading && (
             <>
               {isAuthenticated ? (
                 <div className="flex items-center space-x-3">
                   <Link to="/profile">
-                    <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
                       <User className="h-4 w-4" />
                       Profile
                     </Button>
@@ -110,7 +111,10 @@ export function Navigation() {
                     </Button>
                   </Link>
                   <Link to="/sign-up">
-                    <Button size="sm" className="bg-primary text-white hover:bg-primary/90">
+                    <Button
+                      size="sm"
+                      className="bg-primary text-white hover:bg-primary/90"
+                    >
                       Sign up
                     </Button>
                   </Link>
@@ -118,7 +122,7 @@ export function Navigation() {
               )}
             </>
           )}
-          
+
           {/* Mobile navigation button */}
           <div className="md:hidden">
             <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -136,7 +140,7 @@ export function Navigation() {
                   {filteredNavItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = location.pathname === item.path;
-                    
+
                     return (
                       <Link key={item.path} to={item.path} onClick={closeMenu}>
                         <Button
@@ -149,7 +153,7 @@ export function Navigation() {
                       </Link>
                     );
                   })}
-                  
+
                   {isAuthenticated ? (
                     <>
                       <Link to="/profile" onClick={closeMenu}>
@@ -164,8 +168,8 @@ export function Navigation() {
                       <Button
                         variant="ghost"
                         className="w-full justify-start mt-2"
-                        onClick={() => {
-                          handleLogout();
+                        onClick={async () => {
+                          await logout();
                           closeMenu();
                         }}
                       >

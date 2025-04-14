@@ -18,7 +18,7 @@ interface FlashcardSetListProps {
   sets: FlashcardSet[];
 }
 
-function FlashcardSetList({ sets }: FlashcardSetListProps) {
+export function FlashcardSetList({ sets }: FlashcardSetListProps) {
   if (sets.length === 0) {
     return (
       <div className="text-center py-12">
@@ -78,5 +78,3 @@ function FlashcardSetList({ sets }: FlashcardSetListProps) {
     </div>
   );
 }
-
-export default FlashcardSetList;

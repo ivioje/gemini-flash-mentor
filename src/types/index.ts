@@ -52,3 +52,10 @@ export interface User {
   name: string;
   email: string;
 }
+
+export interface Testimonial {
+  name: string;
+  role: string;
+  content: string;
+  avatar: string;
+}
