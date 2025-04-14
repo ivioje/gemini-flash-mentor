@@ -18,6 +18,14 @@ export interface FlashcardSet {
   createdAt?: Timestamp; // For backward compatibility
 }
 
+export interface FlashcardProps {
+  flashcard: Flashcard;
+  onRating?: (quality: number) => void;
+  onNext?: () => void;
+  onPrevious?: () => void;
+  showNavigation?: boolean;
+}
+
 export interface Flashcard {
   id: string;
   setId: string;

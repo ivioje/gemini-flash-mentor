@@ -1,22 +1,31 @@
-
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 import { FlashcardSet } from "@/types";
 import { formatDistanceToNow } from "date-fns";
+
 import { Book, Clock } from "lucide-react";
-import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface FlashcardSetListProps {
   sets: FlashcardSet[];
 }
 
-export function FlashcardSetList({ sets }: FlashcardSetListProps) {
+function FlashcardSetList({ sets }: FlashcardSetListProps) {
   if (sets.length === 0) {
     return (
       <div className="text-center py-12">
         <h3 className="text-lg font-medium mb-2">No flashcard sets yet</h3>
-        <p className="text-muted-foreground mb-4">Create your first flashcard set to start studying</p>
+        <p className="text-muted-foreground mb-4">
+          Create your first flashcard set to start studying
+        </p>
         <Link to="/create" className="text-primary hover:underline">
           Create flashcard set
         </Link>
@@ -34,7 +43,9 @@ export function FlashcardSetList({ sets }: FlashcardSetListProps) {
                 <CardTitle className="text-xl">{set.title}</CardTitle>
                 <Badge variant="outline">{set.category}</Badge>
               </div>
-              <CardDescription className="line-clamp-2">{set.description}</CardDescription>
+              <CardDescription className="line-clamp-2">
+                {set.description}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center text-sm mb-3">
@@ -43,7 +54,10 @@ export function FlashcardSetList({ sets }: FlashcardSetListProps) {
                 <Clock className="h-4 w-4 ml-4 mr-1" />
                 <span>
                   {set.lastStudied
-                    ? `Studied ${formatDistanceToNow(new Date(set.lastStudied), { addSuffix: true })}`
+                    ? `Studied ${formatDistanceToNow(
+                        new Date(set.lastStudied),
+                        { addSuffix: true }
+                      )}`
                     : "Never studied"}
                 </span>
               </div>
@@ -56,7 +70,7 @@ export function FlashcardSetList({ sets }: FlashcardSetListProps) {
               </div>
             </CardContent>
             <CardFooter className="pt-0 text-xs text-muted-foreground">
-              Created 
+              Created
             </CardFooter>
           </Card>
         </Link>
@@ -64,3 +78,5 @@ export function FlashcardSetList({ sets }: FlashcardSetListProps) {
     </div>
   );
 }
+
+export default FlashcardSetList;
