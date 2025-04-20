@@ -84,8 +84,6 @@ VITE_GEMINI_API_URL=your_gemini_api_url
 - Gemini API
 
 - TanStack Query (React Query)
-(Project bootstrapped using lovable).
 
-### 📄 License
+- Project bootstrapped using lovable.
 
-This project is open source under the MIT License.
